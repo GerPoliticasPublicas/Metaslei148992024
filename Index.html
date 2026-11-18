@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monitoramento do Plano de Metas</title>
+<style>
+:root{
+  /* Identidade do sistema: vinho institucional sobre neutros levemente rosados. Layout: resumo no topo, detalhe abaixo. */
+  --vinho:#4a1e3f;--vinho-2:#8e4a7a;--vinho-3:#f5eef3;--linha:#e0d6db;--fundo:#f4f1f3;--papel:#fff;--tinta:#2b2329;--tinta-2:#62575f;--tinta-3:#857a82;
+  --bom:#0b875b;--ritmo:#2a78d6;--atencao:#e0a100;--critico:#c0262d;--neutro:#a89fa6;--vazio:#ded7dc;
+  --fonte:"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;color-scheme:light}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--fundo);color:var(--tinta);font:15px/1.45 var(--fonte)}
+h1,h2,h3,h4{margin:0;line-height:1.25;text-wrap:balance}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid #c98fb6;outline-offset:1px}
+.app{max-width:1280px;margin:0 auto;padding:0 20px 90px}
+.topo{background:var(--vinho);color:#fff}
+.topo-in{max-width:1280px;margin:0 auto;padding:18px 20px;display:flex;gap:20px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.topo h1{font-size:1.38rem;font-weight:650}
+.topo p{margin:3px 0 0;font-size:.86rem;color:#e6d6e1}
+.periodo{border-left:3px solid var(--vinho-2);padding-left:12px}
+.periodo small{display:block;font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;color:#e6d6e1}
+.periodo b{font-size:1.1rem;font-weight:650}
+.abas{display:flex;gap:4px;border-bottom:2px solid var(--vinho);margin:18px 0;overflow-x:auto}
+.aba{background:#e7dde3;color:var(--vinho);border:0;border-radius:6px 6px 0 0;padding:10px 18px;font-weight:600;cursor:pointer;white-space:nowrap}
+.aba[aria-selected=true]{background:var(--vinho);color:#fff}
+.aba:hover:not([aria-selected=true]){background:#dccdd6}
+.vista[hidden]{display:none}
+.bloco{background:var(--papel);border:1px solid var(--linha);border-radius:8px;padding:18px;margin-bottom:16px}
+.bloco>h2,.tit{font-size:1.02rem;font-weight:650;color:var(--vinho);margin-bottom:12px}
+.sub{color:var(--tinta-2);font-size:.86rem;margin:-8px 0 12px}
+.g2,.g3,.g4{display:grid;gap:12px}.g2{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}.g4{grid-template-columns:2fr 1fr 1fr 1fr}.g3.gf{grid-template-columns:2fr 1fr 1fr}
+label{display:block;font-size:.84rem;font-weight:600;color:#463b43;margin-bottom:4px}
+input,select,textarea{width:100%;min-height:40px;padding:8px 10px;background:#fff;border:1px solid #c9bfc6;border-radius:5px}
+textarea{min-height:66px;resize:vertical}
+.invalido{border-color:var(--critico);box-shadow:0 0 0 2px #f6d5d7}
+.ajuda{font-size:.78rem;color:var(--tinta-2);margin-top:3px}
+.btn{border:1px solid transparent;border-radius:5px;min-height:40px;padding:8px 15px;font-weight:650;cursor:pointer;background:var(--vinho);color:#fff}
+.btn:hover{filter:brightness(1.15)}.btn:disabled{opacity:.55;cursor:wait}
+.btn.ok{background:var(--bom)}.btn.env{background:#b6530f}.btn.sec{background:#fff;color:var(--vinho);border-color:#bfa9b8}.btn.perigo{background:#fff;color:var(--critico);border-color:#dfa8ab}
+.btn.peq{min-height:34px;padding:5px 11px;font-size:.84rem}
+.filtros{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) auto;gap:12px;align-items:end}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--papel);border:1px solid var(--linha);border-radius:8px;padding:14px 15px}
+.kpi span{display:block;font-size:.8rem;color:var(--tinta-2);font-weight:600}
+.kpi b{display:block;font-size:1.85rem;line-height:1.2;font-weight:680;color:var(--vinho);font-variant-numeric:tabular-nums}
+.kpi small{color:var(--tinta-2);font-size:.78rem}
+.kpi.alerta b{color:var(--critico)}
+.seg{display:flex;gap:2px;height:22px;margin-bottom:12px}
+.seg i{display:block;min-width:3px;height:100%}.seg i:first-child{border-radius:4px 0 0 4px}.seg i:last-child{border-radius:0 4px 4px 0}
+.leg{display:flex;flex-wrap:wrap;gap:6px 8px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--linha);background:#fff;border-radius:99px;padding:3px 10px;font-size:.81rem;cursor:pointer;color:var(--tinta)}
+.chip[aria-pressed=true]{border-color:var(--vinho);box-shadow:inset 0 0 0 1px var(--vinho)}
+.chip b{font-variant-numeric:tabular-nums}
+.pt{display:inline-flex;width:15px;height:15px;border-radius:50%;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:800;flex:none;line-height:1}
+.st{display:inline-flex;align-items:center;gap:6px;font-size:.82rem;font-weight:600;white-space:nowrap}
+.dois{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin-bottom:16px}.dois>.bloco{margin:0}
+.barra{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(90px,1fr) 52px;gap:10px;align-items:center;width:100%;background:none;border:0;border-radius:4px;padding:5px 3px;text-align:left;cursor:pointer}
+.barra:hover{background:var(--vinho-3)}.barra[aria-pressed=true]{background:#eadfe6}
+.barra .nome{font-size:.84rem}.barra .nome small{display:block;color:var(--tinta-2);font-size:.75rem}
+.trilho{display:block;height:12px;background:#eee8ec;border-radius:0 4px 4px 0;overflow:hidden}.trilho i{display:block;height:100%;background:var(--vinho-2);border-radius:0 4px 4px 0}
+.barra .val{text-align:right;font-weight:650;font-size:.86rem;font-variant-numeric:tabular-nums}
+.rolar{overflow-x:auto}
+table.dados{width:100%;border-collapse:collapse;font-size:.85rem}
+.dados th{font-size:.77rem;text-align:left;color:var(--tinta-2);border-bottom:2px solid var(--linha);padding:7px 8px;white-space:nowrap}
+.dados td{border-bottom:1px solid #eee7eb;padding:8px;vertical-align:top}
+.dados .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.linkb{background:none;border:0;padding:0;color:var(--vinho);font-weight:650;cursor:pointer;text-align:left;text-decoration:underline;text-underline-offset:2px}
+.clamp{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.aberta .clamp{display:block}
+.det{background:#faf7f9}.det dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 22px;margin:0}.det dt{font-size:.76rem;color:var(--tinta-2);font-weight:650}.det dd{margin:1px 0 0;white-space:pre-wrap}
+.vazio{color:var(--tinta-2);padding:22px;text-align:center;background:#faf7f9;border-radius:6px}
+.ferr{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:10px}.ferr input{max-width:300px}
+.progresso{display:flex;align-items:center;gap:12px;margin-bottom:12px;font-size:.88rem}.progresso .trilho{flex:1;height:10px}.progresso .trilho i{background:var(--bom)}
+details.res{border:1px solid var(--linha);border-radius:7px;margin-bottom:10px;background:#fff}
+details.res>summary{padding:12px 14px;font-weight:650;color:var(--vinho);cursor:pointer;display:flex;justify-content:space-between;gap:12px;background:var(--vinho-3);border-radius:7px}
+.res-corpo{padding:14px}
+.caixa{border:1px solid #cfe0e6;background:#f3f9fb;border-radius:6px;padding:12px;margin-bottom:12px}
+.caixa h4,.tap h4{font-size:.9rem;color:var(--vinho);margin-bottom:9px}
+details.meta{border:1px solid #dfd6dc;border-radius:6px;margin-bottom:8px;background:#fdfcfd}
+details.meta>summary{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:10px;padding:10px 12px;cursor:pointer;align-items:start}
+details.meta[open]>summary{border-bottom:1px solid #e6dee3}
+.mn{font-weight:700;color:var(--vinho-2);font-variant-numeric:tabular-nums}
+.mchips{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.tag{font-size:.75rem;border-radius:4px;background:#eee8ec;padding:2px 7px;white-space:nowrap}
+.tag.feito{background:#dcf1e8;color:#07583c;font-weight:650}
+.meta-corpo{padding:13px}
+.plano{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px 16px;font-size:.81rem;background:#f8f4f7;border-radius:5px;padding:10px;margin:0 0 12px}.plano dt{color:var(--tinta-2);font-weight:650}.plano dd{margin:0}
+.tap{border:2px solid var(--vinho);border-radius:6px;padding:12px;margin-bottom:12px;background:#fff}
+.exec{display:flex;align-items:center;gap:10px;margin:10px 0 12px}.exec .trilho{flex:1;height:14px}.exec .trilho i{background:var(--bom)}.exec b{min-width:56px;text-align:right;font-variant-numeric:tabular-nums}
+.acao{border:1px dashed #8f76bd;background:#f8f5fc;border-radius:5px;padding:11px;margin-bottom:9px}.fonte{border:1px dashed #59a9b8;background:#f0f9fb;border-radius:5px;padding:10px;margin-top:8px}
+.linha-t{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:6px;font-weight:650;font-size:.85rem;color:#51368a}
+.acoes-bar{position:sticky;bottom:0;z-index:5;display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap;background:rgba(255,255,255,.97);border:1px solid var(--linha);border-radius:8px;padding:10px;box-shadow:0 -3px 14px rgba(74,30,63,.13)}
+.msg{border-radius:6px;padding:10px 13px;margin-bottom:12px;font-size:.9rem}.msg.erro{background:#fbe6e7;color:#7d161b;border:1px solid #efb9bc}.msg.ok{background:#e0f4eb;color:#07583c;border:1px solid #a9dcc5}.msg.info{background:#e8f2fb;color:#17497c;border:1px solid #bdd7ef}
+#oficio-conteudo{background:#fff;color:#000;padding:26px;border:1px solid #cfc7cc;font-family:"Times New Roman",Times,serif;font-size:12pt;overflow-x:auto}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:30;background:#2b2329;color:#fff;border-radius:6px;padding:10px 16px;max-width:min(92vw,560px);box-shadow:0 5px 20px rgba(0,0,0,.28)}#toast[hidden]{display:none}
+#dica{position:fixed;z-index:40;pointer-events:none;background:#2b2329;color:#fff;border-radius:5px;padding:6px 9px;font-size:.8rem;max-width:280px}#dica[hidden]{display:none}
+.modal{position:fixed;inset:0;z-index:50;background:rgba(43,35,41,.55);display:flex;align-items:center;justify-content:center;padding:16px}.modal[hidden]{display:none}
+.modal>div{background:#fff;border-radius:8px;padding:20px;max-width:480px;width:100%}.modal h3{color:var(--vinho);margin-bottom:8px}.modal .pe{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+svg text{font-family:var(--fonte)}
+.sub-abas{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.subaba{border:1px solid #bfa9b8;background:#fff;color:var(--vinho);border-radius:99px;padding:7px 14px;font-weight:650;cursor:pointer}.subaba[aria-selected=true]{background:var(--vinho);color:#fff;border-color:var(--vinho)}
+.g4r{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+input[readonly]{background:#eee8ec;color:#51474f;cursor:not-allowed}
+.mestre{display:grid;grid-template-columns:310px minmax(0,1fr);gap:16px;align-items:start}
+.lista{position:sticky;top:10px;max-height:calc(100vh - 110px);overflow-y:auto;border:1px solid var(--linha);border-radius:7px;background:#fff}
+.grp-t{position:sticky;top:0;z-index:1;display:flex;justify-content:space-between;gap:8px;background:var(--vinho-3);color:var(--vinho);font-size:.79rem;font-weight:650;padding:7px 10px}
+.it{display:grid;grid-template-columns:38px minmax(0,1fr) 18px;gap:6px;width:100%;text-align:left;background:#fff;border:0;border-bottom:1px solid #f0eaee;padding:8px 10px;cursor:pointer;font-size:.8rem}
+.it:hover{background:#faf6f9}.it[aria-current=true]{background:#efe3eb;box-shadow:inset 3px 0 0 var(--vinho)}
+.it-t{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.it-s{width:17px;height:17px;border-radius:50%;border:1px solid #c9bfc6;font-size:11px;line-height:15px;text-align:center}.it-s.feito{background:var(--bom);border-color:var(--bom);color:#fff;font-weight:800}
+.meta-card{border:1px solid #dfd6dc;border-radius:7px;padding:13px;background:#fdfcfd}
+.meta-cab{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:10px;margin-bottom:12px}.meta-cab h3{font-size:.93rem;font-weight:550;line-height:1.4;text-wrap:pretty}
+.orc{margin-bottom:12px}.orc-topo{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}.orc-topo h4{font-size:.9rem;color:var(--vinho)}
+.sem-disp{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid #bdd7ef;background:#e8f2fb;color:#17497c;border-radius:6px;padding:12px}
+details.extra{border:1px solid #e6dee3;border-radius:6px;padding:9px 12px;background:#fff}details.extra summary{cursor:pointer;font-weight:650;font-size:.88rem;color:var(--vinho)}details.extra[open] summary{margin-bottom:10px}
+.nav-meta{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:12px;font-size:.86rem;color:var(--tinta-2)}
+.btn:disabled{cursor:not-allowed}
+@media(max-width:1000px){.g4r{grid-template-columns:repeat(2,minmax(0,1fr))}.mestre{grid-template-columns:minmax(0,1fr)}.lista{position:static;max-height:260px}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.dois,.filtros{grid-template-columns:minmax(0,1fr)}.plano{grid-template-columns:repeat(2,minmax(0,1fr))}.g4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.app{padding:0 12px 100px}.g4r,.g2,.g3,.g3.gf,.g4,.det dl,.plano{grid-template-columns:minmax(0,1fr)}.meta-cab{grid-template-columns:40px minmax(0,1fr)}.mchips{grid-column:2;justify-content:flex-start}.kpi b{font-size:1.5rem}.barra{grid-template-columns:minmax(0,1fr) 52px}.barra .trilho{grid-column:1/-1;grid-row:2}.acoes-bar .btn{flex:1 1 45%}}
+@media(prefers-reduced-motion:no-preference){.trilho i{transition:width .25s}}
+@media print{.abas,.acoes-bar,#toast{display:none}}
+
+</style>
+</head>
+<body>
+<header class="topo"><div class="topo-in">
+  <div><h1>Monitoramento do Plano de Enfrentamento à Violência contra a Mulher</h1>
+  <p>Plano Estadual de Metas 2025–2034 · Rondônia · Lei nº 14.899/2024 · <strong id="versaoPag"></strong></p></div>
+  <div class="periodo"><small>Período de referência</small><b id="periodoValor">Carregando…</b></div>
+</div></header>
+<div class="app">
+  <nav class="abas" role="tablist" aria-label="Seções">
+    <button class="aba" role="tab" id="aba-preencher" aria-controls="v-preencher" aria-selected="true" data-vista="preencher">Preencher monitoramento</button>
+    <button class="aba" role="tab" id="aba-painel" aria-controls="v-painel" aria-selected="false" data-vista="painel">Painel</button>
+    <button class="aba" role="tab" id="aba-admin" aria-controls="v-admin" aria-selected="false" data-vista="admin">Administração</button>
+  </nav>
+  <div id="msgGeral"></div>
+
+  <section class="vista" id="v-painel" role="tabpanel" aria-labelledby="aba-painel" hidden>
+    <div class="msg info" id="painelCarregando" hidden>Carregando os dados do painel…</div>
+    <div id="painelConteudo" hidden>
+    <div class="bloco"><div class="filtros">
+      <div><label for="fPeriodo">Período</label><select id="fPeriodo"></select></div>
+      <div><label for="fOrgao">Órgão</label><select id="fOrgao"></select></div>
+      <div><label for="fInciso">Resultado Estratégico</label><select id="fInciso"></select></div>
+      <div><label for="fEixo">Eixo de prevenção</label><select id="fEixo"></select></div>
+      <div style="display:flex;gap:8px"><button class="btn sec" id="btnLimparFiltros" type="button">Limpar filtros</button><button class="btn sec" id="btnAtualizar" type="button">Atualizar dados</button></div>
+    </div></div>
+    <div id="avisoTestePainel"></div>
+    <div class="kpis" id="kpis"></div>
+    <div class="bloco"><h2>Situação das metas</h2><div id="situacao"></div>
+      <p class="ajuda" style="margin:10px 0 0"><strong>Como ler:</strong> execução = valor alcançado ÷ meta. <em>No ritmo</em> significa ao menos 80% do avanço esperado. Metas do ano corrente, anuais ou semestrais são comparadas dentro do próprio ano; as demais, pelo tempo decorrido entre 2025 e o ano da meta. <em>Prazo vencido</em> indica data limite encerrada sem atingir 100%.</p></div>
+    <div class="dois">
+      <div class="bloco"><h2>Execução por Resultado Estratégico</h2><p class="sub">Clique em um resultado para filtrar o painel.</p><div id="porInciso"></div></div>
+      <div class="bloco"><h2>Adesão e execução por órgão</h2><p class="sub">Clique na sigla para filtrar o painel.</p><div class="rolar" id="porOrgao"></div></div>
+    </div>
+    <div class="dois">
+      <div class="bloco"><h2>Execução por eixo de prevenção</h2><div id="porEixo"></div></div>
+      <div class="bloco"><h2>Evolução da execução física</h2><div id="evolucao"></div></div>
+    </div>
+    <div class="bloco"><div class="ferr"><h2 style="margin:0;font-size:1.02rem;color:var(--vinho)">Metas do recorte</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;flex:1;justify-content:flex-end"><label for="busca" style="position:absolute;left:-9999px">Buscar meta</label><input id="busca" type="search" placeholder="Buscar por meta, indicador ou órgão"><button class="btn sec" id="btnCsvPainel" type="button">Baixar dados (CSV)</button></div></div>
+      <div class="rolar" id="tabMetas"></div></div>
+    </div>
+  </section>
+
+  <section class="vista" id="v-preencher" role="tabpanel" aria-labelledby="aba-preencher">
+    <div class="bloco" style="display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;background:var(--vinho-3)"><span>Preencha os dados abaixo. Ao final, gere o resumo para o Ofício e baixe a planilha.</span><span id="infoOficio" style="color:var(--tinta-2);font-size:.88rem"></span></div>
+    <div class="bloco"><h2>1. Identificação da Unidade</h2><div class="g3">
+      <div><label for="orgao">Órgão/Secretaria (Sigla)</label><select id="orgao"></select></div>
+      <div><label for="responsavel">Responsável pelo Preenchimento</label><input id="responsavel" placeholder="Nome completo" autocomplete="name"></div>
+      <div><label for="email">E-mail Institucional</label><input id="email" type="email" placeholder="email@ro.gov.br" autocomplete="email"></div>
+    </div></div>
+    <div class="bloco"><h2>2. Resultados Estratégicos e Projetos</h2><div id="formMetas"></div></div>
+    <div id="msgForm"></div>
+    <div class="acoes-bar">
+      <button class="btn sec" id="btnTeste" type="button" hidden>Preencher com dados de teste</button>
+      <button class="btn perigo" id="btnLimpar" type="button">Limpar Dados</button>
+      <button class="btn" id="btnResumo" type="button">Gerar Resumo para Ofício</button>
+      <button class="btn ok" id="btnCsv" type="button">Baixar Planilha (CSV)</button>
+      <button class="btn env" id="btnEnviar" type="button">Enviar para a SEPOG</button>
+    </div>
+    <div id="resultadoArea" hidden style="margin-top:18px"><div class="bloco">
+      <div class="ferr"><h2 style="margin:0;font-size:1.02rem;color:var(--vinho)">Texto para o Ofício</h2><button class="btn sec" id="btnCopiar" type="button">Copiar Texto para SEI</button></div>
+      <div id="oficio-conteudo"></div></div></div>
+  </section>
+
+  <section class="vista" id="v-admin" role="tabpanel" aria-labelledby="aba-admin" hidden>
+    <div class="bloco" id="adminLogin" style="max-width:440px"><h2>Painel de Administração (GAMPP)</h2>
+      <form id="formLogin"><label for="senhaAdmin">Senha de administração</label><input id="senhaAdmin" type="password" autocomplete="current-password"><div id="msgLogin" style="margin-top:10px"></div><button class="btn" style="margin-top:10px" type="submit">Entrar</button></form></div>
+    <div id="adminArea" hidden>
+      <div class="sub-abas" role="tablist" aria-label="Administração">
+        <button class="subaba" type="button" role="tab" data-sub="param" aria-selected="true">Parâmetros Gerais</button>
+        <button class="subaba" type="button" role="tab" data-sub="cad" aria-selected="false">Cadastro de Projetos</button>
+        <button class="subaba" type="button" role="tab" data-sub="reg" aria-selected="false">Registros enviados</button>
+        <button class="subaba" type="button" role="tab" data-sub="ver" aria-selected="false">Versões</button>
+      </div>
+      <div class="bloco" id="sub-param"><h2>Parâmetros Gerais</h2><form id="formParam"><div class="g2">
+        <div><label for="inputPeriodo">Período de Referência</label><input id="inputPeriodo" placeholder="2º Quadrimestre 2026"></div>
+        <div><label for="inputOficio">Ofício Base</label><input id="inputOficio"></div>
+        <div><label for="inputDestNome">Nome do Destinatário</label><input id="inputDestNome"></div>
+        <div><label for="inputDestCargo">Cargo do Destinatário</label><input id="inputDestCargo"></div>
+        <div><label for="inputDestGenero">Tratamento</label><select id="inputDestGenero"><option value="F">Senhora Secretária</option><option value="M">Senhor Secretário</option></select></div>
+      </div><div id="msgParam" style="margin-top:12px"></div><button class="btn ok" style="margin-top:12px" type="submit">Publicar Parâmetros</button></form></div>
+      <div class="bloco" id="sub-cad" hidden><h2>Cadastro de Projetos</h2><p class="sub">O que for salvo aqui chega travado para a unidade no ano escolhido.</p><div class="g3">
+        <div><label for="cadOrgao">Órgão</label><select id="cadOrgao"></select></div>
+        <div><label for="cadMeta">Projeto (Meta do Plano)</label><select id="cadMeta"></select></div>
+        <div><label for="cadAno">Meta (Ano)</label><select id="cadAno"></select></div>
+      </div><div id="msgCad" style="margin-top:12px"></div><div id="cadForm"></div></div>
+      <div class="bloco" id="sub-reg" hidden><h2>Registros enviados</h2><p class="sub">A exclusão é lógica: o registro sai do painel e do formulário, mas continua guardado na planilha.</p><div class="g4r">
+        <div><label for="regPeriodo">Período</label><select id="regPeriodo"></select></div>
+        <div><label for="regOrgao">Órgão</label><select id="regOrgao"></select></div>
+        <div><label for="regSit">Mostrar</label><select id="regSit"><option value="ativos">Ativos</option><option value="testes">Testes</option><option value="excluidos">Excluídos</option><option value="todos">Todos</option></select></div>
+        <div><label for="regMotivo">Motivo da exclusão (opcional)</label><input id="regMotivo"></div>
+      </div><div id="msgReg" style="margin-top:12px"></div><div class="ferr" style="justify-content:flex-end"><button class="btn perigo" id="btnExcluirTestes" type="button">Excluir todos os testes</button></div><div class="rolar" id="tabRegistros"></div></div>
+      <div class="bloco" id="sub-ver" hidden><h2>Versões</h2><p id="verAtual" style="font-weight:650;margin:0 0 10px"></p><div class="rolar"><table class="dados"><thead><tr><th>Versão</th><th>Data</th><th>O que mudou</th></tr></thead><tbody id="verLista"></tbody></table></div><p class="ajuda" style="margin-top:12px">Para voltar a uma versão anterior: no Apps Script, abra Implantar &gt; Gerenciar implantações &gt; lápis e escolha a versão desejada na lista.</p></div>
+    </div>
+  </section>
+</div>
+<datalist id="listaFontes"></datalist>
+<div id="toast" role="status" aria-live="polite" hidden></div><div id="dica" hidden></div>
+<div class="modal" id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modalT"><div><h3 id="modalT"></h3><p id="modalX" style="margin:0"></p><div class="pe"><button class="btn sec" id="modalNao" type="button">Cancelar</button><button class="btn" id="modalSim" type="button">Confirmar</button></div></div></div>
+<script>
+'use strict';
+// =================================================================
+// VERSÃO DO SISTEMA: atualize aqui e em VERSAO no Codigo.gs
+// =================================================================
+var VERSAO = '2.3.0';
+var HISTORICO = [
+  ['2.3.0','18/11/2026','Controle de versão, botão de teste, exclusão lógica, cadastro de meta do ano e de orçamento pela administração, com campos travados para a unidade.'],
+  ['2.2.0','18/11/2026','Opção "Não há dispêndio orçamentário", correção do travamento após reenvios, leitura da base sob demanda e preenchimento de uma meta por vez.'],
+  ['2.1.0','18/11/2026','Indicador do Plano fixo, Meta (Ano) em lista, dotações separadas em ações e correção do Limpar Dados.'],
+  ['2.0.0','18/11/2026','Reconstrução do sistema: painel, 127 metas do Anexo I, ofício, CSV e gravação na planilha.']
+];
+// =================================================================
+// CATÁLOGO: 127 metas do Anexo I do Plano Estadual de Metas 2025-2034
+// =================================================================
+var CAT = {"metas":[{"id":"I-SEAS-01","i":"I","o":"SEAS","n":1,"m":"Realizar, de forma contínua e com periodicidade anual, capacitações para os profissionais e atores da rede de enfrentamento à violência contra a mulher e da rede de atendimento à mulher em situação de violência, com foco na qualificação técnica e humanizada. As formações deverão abordar temáticas específicas relacionadas às diversas condições e identidades das mulheres (como mulheres negras, indígenas, com deficiência, entre outras), bem como temas relacionados à exploração sexual, laboral e ao tráfico de pessoas, visando o aprimoramento do atendimento e o fortalecimento da articulação entre os serviços.","ind":"Número de pessoas capacitadas","e":"Primária","tv":"Sim","pz":"Anual","ano":2034,"rec":true,"dot":"23.016.08.244.2116.2267 23.001.08.244.2112.2509"},{"id":"I-SEAS-02","i":"I","o":"SEAS","n":2,"m":"Promover oficinas com profissionais da assistência social com temas de prevenção a violência e fluxos de atendimento; intersetorialidade e trabalho em rede.","ind":"Números de oficinas realizadas para os equipamentos socioassistenciais; Número de técnicos participantes;","e":"Primária","tv":"Sim","pz":"2026/2027","ano":2027,"rec":false,"dot":""},{"id":"I-SEAS-03","i":"I","o":"SEAS","n":3,"m":"Promover oficinas com a participação de 100% dos técnicos de referência do CREAS no atendimento a situação de violação de direitos.","ind":"Números de técnicos participantes nas oficinas","e":"Secundária","tv":"Sim","pz":"2026/2028","ano":2028,"rec":false,"dot":""},{"id":"I-SEAS-04","i":"I","o":"SEAS","n":4,"m":"Promover oficinas com 100% dos técnicos de referência das Unidades de Acolhimento para Mulheres em Situação de Violência.","ind":"Números de oficinas realizadas para os equipamentos socioassistenciais; Número de técnicos participantes;","e":"Terciária","tv":"Sim","pz":"2026/2028","ano":2028,"rec":false,"dot":""},{"id":"I-SEAS-05","i":"I","o":"SEAS","n":5,"m":"Promover oficinas dos Registro Mensal de Atendimento (RMA) para técnicos do CREAS.","ind":"Números oficinas realizadas para os equipamentos socioassistenciais; Número de técnicos participantes;","e":"Terciária","tv":"Sim","pz":"2026/2028","ano":2028,"rec":false,"dot":""},{"id":"I-SEAS-06","i":"I","o":"SEAS","n":6,"m":"Promover o acesso prioritário das mulheres inseridas no Programa Mulher Protegida aos cursos de qualificação profissional oferecidos pelo Programa Vencer.","ind":"Pessoas Capacitadas","e":"Terciária","tv":"Não","pz":"Anual","ano":2034,"rec":true,"dot":"PA2162/4068"},{"id":"I-SEAS-07","i":"I","o":"SEAS","n":7,"m":"Realizar divulgação do Programa Mulher Protegida nos plantões sociais nos empreendimentos habitacionais orientando as mulheres sobre direitos e mecanismos de enfrentamento à violência de gênero em todos os formatos.","ind":"Pessoas atendidas","e":"Primária","tv":"Não","pz":"Anual","ano":2034,"rec":true,"dot":"PA 2175/1348"},{"id":"I-SEDUC-01","i":"I","o":"SEDUC","n":1,"m":"Ampliar e estruturar equipe multidisciplinar em 100% das Superintendências Regionais até 2027.","ind":"Número de equipes compostas por região.","e":"Primária","tv":"Não","pz":"2027","ano":2027,"rec":false,"dot":"PA: 12.122.1015.2351"},{"id":"I-SEDUC-02","i":"I","o":"SEDUC","n":2,"m":"Desenvolver e disponibilizar material didático digital com recorte interseccional para 100% das escolas estaduais até 2026.","ind":"Material produzido e escolas atingidas.","e":"Primária","tv":"Sim","pz":"2026","ano":2026,"rec":false,"dot":""},{"id":"I-SEDUC-03","i":"I","o":"SEDUC","n":3,"m":"Realizar no mínimo 2 capacitações intersetoriais anuais com SEAS e rede de proteção até 2030.","ind":"Número de capacitações realizadas por ano.","e":"Primária","tv":"Sim","pz":"Anual até 2030","ano":2030,"rec":true,"dot":""},{"id":"I-SEDUC-04","i":"I","o":"SEDUC","n":4,"m":"Firmar e operacionalizar parceria contínua com o Programa Mulher Protegida até 2025.","ind":"Acordo de cooperação ativo e ações conjuntas.","e":"Secundária","tv":"Não","pz":"2025","ano":2025,"rec":false,"dot":""},{"id":"I-SESAU-01","i":"I","o":"SESAU","n":1,"m":"Realizar 06 Oficinas para equipe multiprofisional para atendimento integral a vitima de violencia sexual e aborto legal.","ind":"Nº de Oficinas realizadas","e":"Terciária","tv":"Sim","pz":"2028","ano":2028,"rec":false,"dot":""},{"id":"I-SESAU-02","i":"I","o":"SESAU","n":2,"m":"Realizar 06 Oficinas regionais para equipe multiprofisional para elaboração do FLUXO de atendimento integral a vitima de violencia sexual e aborto legal.","ind":"Nº de Oficinas realizadas","e":"Terciária","tv":"Sim","pz":"2025","ano":2025,"rec":false,"dot":""},{"id":"I-SESDEC-01","i":"I","o":"SESDEC","n":1,"m":"Desenvolver cursos conjuntos entre PM, PC, Politec e Bombeiros sobre violência doméstica, direitos humanos e atendimento às vítimas com vistas a 80% do efetivo seja treinado anualmente.","ind":"Número de profissionais capacitados","e":"Primária","tv":"Sim","pz":"2034","ano":2034,"rec":false,"dot":"Fundo de Segurança Pública / FUNESP"},{"id":"I-PM-RO-01","i":"I","o":"PM-RO","n":1,"m":"Implantar o Núcleo Permanente de Formação Continuada sobre violência contra a mulher até 2028.","ind":"Implantar o Núcleo Permanente de Formação Continuada sobre violência contra a mulher até 2028.","e":"Primária","tv":"Sim","pz":"2028","ano":2028,"rec":false,"dot":""},{"id":"I-PM-RO-02","i":"I","o":"PM-RO","n":2,"m":"Realizar 02 de treinamentos realizados no Núcleo Permanente de Formação Continuada sobre violência contra a mulher por ano até 2034.","ind":"Número de treinamentos realizados.","e":"Primária","tv":"Sim","pz":"Semestral até 2030","ano":2030,"rec":true,"dot":""},{"id":"I-PM-RO-03","i":"I","o":"PM-RO","n":3,"m":"Promover ciclos de palestras e rodas de conversa com enfoque na Violência Contra a Mulher nos batalhões que possuam as Patrulhas Maria da Penha implementadas até 2028.","ind":"Percentual de batalhões cobertos.","e":"Secundária","tv":"Sim","pz":"Até 2028","ano":2028,"rec":false,"dot":""},{"id":"II-SESDEC-01","i":"II","o":"SESDEC","n":1,"m":"Incluir disciplina específica de enfrentamento da violência doméstica e familiar contra a mulher, com inserção de módulos obrigatórios sobre gênero, mediação de conflitos e técnicas não violentas nas academias de polícia, de modo a oportunizar 100% dos novos agentes formados com o conteúdo.","ind":"Adequação curricular","e":"Primária","tv":"Sim","pz":"2034","ano":2034,"rec":false,"dot":"Fundo de Segurança Pública / FUNESP"},{"id":"II-PM-RO-01","i":"II","o":"PM-RO","n":1,"m":"Implantar o Núcleo Permanente de Formação Continuada sobre violência contra a mulher até 2028.","ind":"Implantar o Núcleo Permanente de Formação Continuada sobre violência contra a mulher até 2028.","e":"Primária","tv":"Sim","pz":"2028","ano":2028,"rec":false,"dot":""},{"id":"II-PM-RO-02","i":"II","o":"PM-RO","n":2,"m":"Realizar 02 de treinamentos realizados no Núcleo Permanente de Formação Continuada sobre violência contra a mulher por ano até 2034.","ind":"Número de treinamentos realizados.","e":"Primária","tv":"Não","pz":"Semestral até 2030","ano":2030,"rec":true,"dot":""},{"id":"II-PM-RO-03","i":"II","o":"PM-RO","n":3,"m":"Promover ciclos de palestras e rodas de conversa com enfoque na Violência Contra a Mulher nos batalhões que possuam as Patrulhas Maria da Penha implementadas até 2028.","ind":"Percentual de batalhões cobertos.","e":"Secundária","tv":"Não","pz":"Até 2028","ano":2028,"rec":false,"dot":""},{"id":"II-PC-RO-01","i":"II","o":"PC-RO","n":1,"m":"Qualificar 100% dos servidores da Polícia Civil para o atendimento e investigação humanizada até 2028, com cursos de capacitação.","ind":"Percentual de 100% do efetivo policial, visto que todas as unidades policiais realizam atendimento a mulher e hipervulneráveis.","e":"Primária","tv":"Não","pz":"2028","ano":2028,"rec":false,"dot":"Necessidade de destinar orçamento para efetivação da meta."},{"id":"II-PC-RO-02","i":"II","o":"PC-RO","n":2,"m":"Incluir disciplina obrigatória sobre violência de gênero nos cursos regulares da Academia de Polícia até 2026.","ind":"Disciplina incorporada na grade curricular.","e":"Primária","tv":"Sim","pz":"2026","ano":2026,"rec":false,"dot":"Necessidade de destinar orçamento para efetivação da meta."},{"id":"II-PC-RO-03","i":"II","o":"PC-RO","n":3,"m":"Oferecer pelo menos 1 curso interno de atualização por ano sobre técnicas de atendimento e investigação com perspectiva de gênero.","ind":"Percentual de 100% do efetivo policial, visto que todas as unidades policiais realizam atendimento a mulher e hipervulneráveis.","e":"Primária","tv":"Não","pz":"2027","ano":2027,"rec":false,"dot":"Necessidade de destinar orçamento para efetivação da meta."},{"id":"II-CBM-01","i":"II","o":"CBM","n":1,"m":"Incluir módulo sobre enfrentamento à violência doméstica nas formações internas de todos os cursos básicos e de aperfeiçoamento até 2027.","ind":"Percentual de aproveitamento do módulo","e":"Primária","tv":"Sim","pz":"2027","ano":2027,"rec":false,"dot":"15.014.06.128.1015.2096 15.00.06.122.1015.2087"},{"id":"II-CBM-02","i":"II","o":"CBM","n":2,"m":"Participar de pelo menos 1 ação formativa interinstitucional por ano até 2030.","ind":"Número de ações participadas","e":"Primária","tv":"Não","pz":"semestral","ano":2030,"rec":true,"dot":"15.00.06.122.1015.2087"},{"id":"II-CBM-03","i":"II","o":"CBM","n":3,"m":"Implementar ações educativas de acolhimento em 100% dos quartéis operacionais até 2028.","ind":"Percentual de quartéis com ações implementadas.","e":"Terciária","tv":"Não","pz":"2029","ano":2029,"rec":false,"dot":"15.014.06.128.1015.2096 15.00.06.122.1015.2087"},{"id":"III-SESDEC-01","i":"III","o":"SESDEC","n":1,"m":"Realizar diagnóstico sobre a necessidade de ampliação do número de Delegacias Especializadas da Mulher, com estudo de viabilidade no aumento de 08 unidades para 09 unidades.","ind":"Número de delegacias especializadas","e":"Primária","tv":"Sim","pz":"2034","ano":2034,"rec":false,"dot":"Fundo de Segurança Pública / FUNESP"},{"id":"III-PC-RO-01","i":"III","o":"PC-RO","n":1,"m":"Estruturar as DEAMS com efetivo policial e local adequado, com reforma de unidades e construção de prédios com acessibilidade e salas de atendimento humanizado, acolhimento, brinquedoteca, bem como contratação de psicólogos e assistentes sociais.","ind":"Estrutura física, com construção e reforma de unidades existentes. Contratação de efetivo policial, psicólogos e assistentes sociais.","e":"Secundária","tv":"Não","pz":"2030","ano":2030,"rec":false,"dot":"Necessidade de destinar orçamento para efetivação da meta."},{"id":"III-PC-RO-02","i":"III","o":"PC-RO","n":2,"m":"Adequar as unidades policiais existentes para garantir funcionamento ininterrupto (24 horas) de atendimento humanizado até 2029.","ind":"Percentual de unidades policiais com atendimento humanizado e espaço adequado para atender mulheres vítimas e hipervulneráveis ininterrupto (24h).","e":"Secundária","tv":"Não","pz":"2029","ano":2029,"rec":false,"dot":"Necessidade de destinar orçamento para efetivação da meta."},{"id":"III-PC-RO-03","i":"III","o":"PC-RO","n":3,"m":"Reduzir em 70% os casos de unidades com locais compartilhados e com déficit de estrutura até 2030.","ind":"Percentual de unidades readequadas. 50% possuem estrutura compartilhada.","e":"Secundária","tv":"Não","pz":"2028","ano":2028,"rec":false,"dot":"Necessidade de destinar orçamento para efetivação da meta."},{"id":"III-PC-RO-04","i":"III","o":"PC-RO","n":4,"m":"Atualizar e expandir as resoluções internas sobre funcionamento e qualificação das DEAMs até 2026.","ind":"Resoluções publicadas e implantadas.","e":"Primária","tv":"Sim","pz":"2026","ano":2026,"rec":false,"dot":""},{"id":"IV-SESDEC-01","i":"IV","o":"SESDEC","n":1,"m":"Implementar soluções em dispositivos móveis que viabilize a proteção da integridade física da mulher, de modo a alcançar 50% do universo de mulheres amparadas com medidas protetivas.","ind":"Quantidade de Mulheres atendidas","e":"Secundária","tv":"Sim","pz":"2034","ano":2034,"rec":false,"dot":"Fundo de Segurança Pública / FUNESP"},{"id":"IV-SESDEC-02","i":"IV","o":"SESDEC","n":2,"m":"Realizar termo de cooperação com a SEJUS, visando a integração com o sistemas de monitoramento em casos de medidas protetivas ativas, priorizando municípios críticos.","ind":"Número de agressores monitorados","e":"Secundária","tv":"Sim","pz":"2034","ano":2034,"rec":false,"dot":"Fundo de Segurança Pública / FUNESP"},{"id":"IV-SEJUS-01","i":"IV","o":"SEJUS","n":1,"m":"Ampliar as tornozeleiras eletrônicas ativas com restrição geográfica vinculada à aproximação da vítima em 100% dos casos com medida protetiva até 2027.","ind":"Nº de tornozeleiras ativas em casos de violência doméstica: Atual: 85 /Meta: 170","e":"Secundária","tv":"Não","pz":"2027","ano":2027,"rec":false,"dot":""},{"id":"IV-PM-RO-01","i":"IV","o":"PM-RO","n":1,"m":"Realizar o primeiro atendimento imediato de vítimas por meio da Patrulha Maria da Penha nos municípios que possuam Patrulhas Maria da Penha com cobertura de DEAM até 2032.","ind":"Número de Municípios que possuam Patrulhas","e":"Secundária","tv":"Não","pz":"2032","ano":2032,"rec":false,"dot":""},{"id":"IV-PM-RO-02","i":"IV","o":"PM-RO","n":2,"m":"Realizar testes-piloto do aplicativo Protege-se em 05 municípios com maior índice de violência doméstica até 2028.","ind":"Municípios com piloto implantado.","e":"Secundária","tv":"Sim","pz":"2028","ano":2028,"rec":false,"dot":""},{"id":"V-SEJUS-01","i":"V","o":"SEJUS","n":1,"m":"Ampliar em 100% a distribuição de tornozeleiras eletrônicas para casos de violência doméstica com medida protetiva até 2028.","ind":"Número de tornozeleiras em uso em casos de violência doméstica.","e":"Secundária","tv":"Não","pz":"2028","ano":2028,"rec":false,"dot":""},{"id":"V-SEJUS-02","i":"V","o":"SEJUS","n":2,"m":"Formalizar protocolo com o Judiciário e forças policiais para fiscalização e resposta imediata a violações até 2026.","ind":"Protocolo assinado e operacionalizado.","e":"Secundária","tv":"Sim","pz":"2026","ano":2026,"rec":false,"dot":""},{"id":"V-SEJUS-03","i":"V","o":"SEJUS","n":3,"m":"Implantar um sistema de acompanhamento diário dos dados de monitoramento dos agressores com painéis acessíveis às forças de segurança até 2027.","ind":"Sistema em funcionamento","e":"Primária","tv":"Sim","pz":"2027","ano":2027,"rec":false,"dot":""},{"id":"V-SESDEC-01","i":"V","o":"SESDEC","n":1,"m":"Realizar 01 ciclo de formação semestral para servidores sobre Lei Maria da Penha, feminicídio e abordagem empática até 2030.","ind":"Nº de ciclos realizados.","e":"Primária","tv":"Não","pz":"Semestral","ano":2030,"rec":true,"dot":"Fundo de Segurança Pública / FUNESP"},{"id":"V-SESDEC-02","i":"V","o":"SESDEC","n":2,"m":"Implementar visitas domiciliares da Patrulha Maria da Penha a agressores em 100% dos municípios com alta reincidência até 2027.","ind":"Nº de municípios com visitas ativas.","e":"Secundária","tv":"Não","pz":"2027","ano":2027,"rec":false,"dot":"Fundo de Segurança Pública / FUNESP"},{"id":"V-SESDEC-03","i":"V","o":"SESDEC","n":3,"m":"Integrar SESDEC à rede de acompanhamento intersetorial dos autores de violência, com protocolos definidos até 2026.","ind":"Protocolo intersetorial publicado.","e":"Terciária","tv":"Sim","pz":"2026","ano":2026,"rec":false,"dot":""},{"id":"V-PC-RO-01","i":"V","o":"PC-RO","n":1,"m":"Criar protocolo padrão de atendimento para autores e vítimas de violência doméstica até 2026.","ind":"Protocolo aprovado e divulgado.","e":"Primária","tv":"Sim","pz":"2026","ano":2026,"rec":false,"dot":""},{"id":"V-PC-RO-02","i":"V","o":"PC-RO","n":2,"m":"Garantir atendimento por psicólogo(a) e assistente social nas 08 delegacias especializadas até 2028.","ind":"Nº de delegacias com equipe multiprofissional.","e":"Terciária","tv":"Não","pz":"2028","ano":2028,"rec":false,"dot":""},{"id":"V-PC-RO-03","i":"V","o":"PC-RO","n":3,"m":"Estabelecer rede de apoio intersetorial com serviços de proteção e reeducação de autores de violência em 100% das regiões integradas de segurança até 2029.","ind":"50% de regiões com rede intersetorial formalizada.","e":"Terciária","tv":"Sim","pz":"2029","ano":2029,"rec":false,"dot":""},{"id":"V-SEAS-01","i":"V","o":"SEAS","n":1,"m":"Apoiar a implantação e/ou fortalecimento de projetos voltados ao atendimento de homens autores de violência doméstica e familiar, numa perspectiva reflexiva e responsabilizante, com foco na prevenção da reincidência e na promoção de mudanças de comportamento, por meio de ações desenvolvidas em parceria com o sistema de justiça, segurança pública e demais órgãos da rede de enfrentamento à violência contra a mulher.","ind":"- Número de municípios assessorados - Pessoas capacitadas","e":"Terciária","tv":"Não","pz":"2029","ano":2029,"rec":false,"dot":""},{"id":"VI-SESDEC-01","i":"VI","o":"SESDEC","n":1,"m":"Integrar, até 2026, o sistema estadual de tornozeleiras eletrônicas ao CIOP com alerta automático de violação de medida protetiva.","ind":"Sistema ativo e número de ocorrências com resposta imediata.","e":"Secundária","tv":"Sim","pz":"2026","ano":2026,"rec":false,"dot":"Fundo de Segurança Pública / FUNESP"},{"id":"VI-SESDEC-02","i":"VI","o":"SESDEC","n":2,"m":"Implantar protocolo de atuação emergencial no CIOP em parceria com PM e SEJUS, com equipe dedicada à proteção de mulheres monitoradas até 2025.","ind":"Protocolo publicado e equipe alocada.","e":"Secundária","tv":"Sim","pz":"2025","ano":2025,"rec":false,"dot":"Fundo de Segurança Pública / FUNESP"},{"id":"VI-SESDEC-03","i":"VI","o":"SESDEC","n":3,"m":"Monitorar, até 2027, 100% dos casos de reincidência grave de violência doméstica com sistema de resposta eletrônica integrada.","ind":"Cobertura de casos prioritários com monitoramento.","e":"Secundária","tv":"Sim","pz":"2027","ano":2027,"rec":false,"dot":"Fundo de Segurança Pública / FUNESP"},{"id":"VI-SEJUS-01","i":"VI","o":"SEJUS","n":1,"m":"Implementar, até 2026, programas intersetoriais de reeducação de agressores em parceria com SESDEC em 100% das regionais do sistema prisional.","ind":"número de unidades prisionais com projetos implementados","e":"Terciária","tv":"Sim","pz":"2027","ano":2027,"rec":false,"dot":""},{"id":"VI-SEJUS-02","i":"VI","o":"SEJUS","n":2,"m":"Ampliar o uso de tornozeleiras eletrônicas com restrição geográfica vinculada à aproximação da vítima em 100% dos casos com medida protetiva até 2027.","ind":"número de tornozeleiras em uso em casos de violência doméstica.","e":"Terciária","tv":"Sim","pz":"2027","ano":2027,"rec":false,"dot":""},{"id":"VI-SEJUS-03","i":"VI","o":"SEJUS","n":3,"m":"Implantar equipe técnica (psicólogos e assistentes sociais) para acompanhamento de agressores em 70% das unidades penitenciárias até 2028.","ind":"quantidade de unidades prisionais","e":"Terciária","tv":"Não","pz":"Não informado","ano":2028,"rec":false,"dot":""},{"id":"VI-PM-RO-01","i":"VI","o":"PM-RO","n":1,"m":"Criar e desenvolver o aplicativo “Protege-se” até 2032, com o botão \"pânico digital\", com o fito de rastreamento em tempo real e alerta georreferenciado.","ind":"Sistema em funcionamento","e":"Secundária","tv":"Sim","pz":"2032","ano":2032,"rec":false,"dot":"A Instituição não possui dotação própria, podendo ser implementada caso haja parceria com outras secretarias ou òrgãos."},{"id":"VI-PM-RO-02","i":"VI","o":"PM-RO","n":2,"m":"Realizar testes-piloto do aplicativo em 5 municípios com maior índice de violência doméstica até 2032","ind":"Municípios com piloto implantado.","e":"Secundária","tv":"Sim","pz":"2032","ano":2032,"rec":false,"dot":"A Instituição não possui dotação própria, podendo ser implementada caso haja parceria com outras secretarias ou òrgãos."},{"id":"VI-PM-RO-03","i":"VI","o":"PM-RO","n":3,"m":"Garantir que as vítimas em situação de risco grave, recebam acesso ao aplicativo e orientação sobre seu uso até 2032","ind":"Nº de vítimas cadastradas e treinadas.","e":"Secundária","tv":"Não","pz":"2032","ano":2032,"rec":false,"dot":"A Instituição não possui dotação própria, podendo ser implementada caso haja parceria com outras secretarias ou òrgãos."},{"id":"VII-SEDUC-01","i":"VII","o":"SEDUC","n":1,"m":"Incluir conteúdos sobre enfrentamento à violência de gênero nos componentes curriculares da educação básica até 2026.","ind":"Currículo atualizado oficialmente.","e":"Primária","tv":"Sim","pz":"2026","ano":2026,"rec":false,"dot":""},{"id":"VII-SEDUC-02","i":"VII","o":"SEDUC","n":2,"m":"Disponibilizar material didático digital com abordagem interseccional para 100% das escolas estaduais até 2027.","ind":"Nº de escolas com acesso ao material.","e":"Primária","tv":"Sim","pz":"2027","ano":2027,"rec":false,"dot":""},{"id":"VII-SEDUC-03","i":"VII","o":"SEDUC","n":3,"m":"Ampliar a equipe multidisciplinar com foco em prevenção da violência nas Superintendências Regionais que estão nos seus quadros um déficit de pessoal até 2030","ind":"Nº de regionais com equipe ampliada.","e":"Primária","tv":"Não","pz":"2030","ano":2030,"rec":false,"dot":"PA: 12.122.1015.2351"},{"id":"VII-SEDUC-04","i":"VII","o":"SEDUC","n":4,"m":"Fortalecer o Programa Mulher Protegida com 1 ciclo formativo anual em parceria com SEAS até 2030.","ind":"Ciclos realizados por ano.","e":"Primária","tv":"Não","pz":"Anual até 2030","ano":2030,"rec":true,"dot":""},{"id":"VII-SESAU-01","i":"VII","o":"SESAU","n":1,"m":"Realizar 01 campanha de Prevenção e Combate a Violência Sexual contra mulher de forma intersetorial","ind":"Nº de campanhas realizadas por ano.","e":"Primária","tv":"Não","pz":"Anual","ano":2034,"rec":true,"dot":""},{"id":"VII-PM-RO-01","i":"VII","o":"PM-RO","n":1,"m":"Realizar ao menos 1 ciclo anual de palestras educativas nas escolas estaduais com participação de policiais capacitados até 2030.","ind":"Nº de palestras realizadas e escolas atendidas.","e":"Primária","tv":"Não","pz":"Anual","ano":2030,"rec":true,"dot":""},{"id":"VII-PM-RO-02","i":"VII","o":"PM-RO","n":2,"m":"Capacitar 100% dos agentes da Patrulha Maria da Penha e do NUPEVID em técnicas pedagógicas até 2032","ind":"Nº de policiais capacitados.","e":"Primária","tv":"Não","pz":"2032","ano":2032,"rec":false,"dot":""},{"id":"VII-PM-RO-03","i":"VII","o":"PM-RO","n":3,"m":"Estender a ação educativa a 100% dos municípios com escolas estaduais até 2032.","ind":"Cobertura territorial da ação.","e":"Primária","tv":"Não","pz":"2032","ano":2032,"rec":false,"dot":""},{"id":"VIII-SESAU-01","i":"VIII","o":"SESAU","n":1,"m":"Apoiar tecnicamente a implantação de 05 serviços nos municipios polo de regional no atendimento de mulheres em situação de violência sexual e aborto legal até 2030","ind":"Nº de serviços implantados","e":"Terciária","tv":"Sim","pz":"Até 2030","ano":2030,"rec":false,"dot":""},{"id":"VIII-SESAU-02","i":"VIII","o":"SESAU","n":2,"m":"Elaborar 01 protocolo estadual de atendimento humanizado as mulheres em situação de violência Sexual.","ind":"01 Protocolo publicado.","e":"Terciária","tv":"Sim","pz":"2027","ano":2027,"rec":false,"dot":""},{"id":"VIII-POLITEC-01","i":"VIII","o":"POLITEC","n":1,"m":"Expansão de horários dos IMLs e órgãos da Rede: Ampliar o funcionamento do IML e unidades de perícia para 24h em regiões estratégicas. Aumentar de 8h/dia para 12h/dia em 3 municípios (Ji-Paraná, Vilhena e Porto Velho)","ind":"Horário de atendimento","e":"Secundária","tv":"Não","pz":"2034","ano":2034,"rec":false,"dot":""},{"id":"VIII-SESDEC-01","i":"VIII","o":"SESDEC","n":1,"m":"- Ampliar o funcionamento do IML e unidades de perícia para 24h em regiões estratégicas.","ind":"Horário de atendimento","e":"Secundária","tv":"Não","pz":"2034","ano":2034,"rec":false,"dot":"Fundo de Segurança Pública / FUNESP"},{"id":"IX-SESAU-01","i":"IX","o":"SESAU","n":1,"m":"Realizar 06 capacitações sobre o Protocolo Estadual de Atendimento Humanizado as mulheres em situação de violência Sexual nas regionais de saúde","ind":"Número de capacitação realizada","e":"Terciária","tv":"Sim","pz":"2028","ano":2028,"rec":false,"dot":""},{"id":"IX-SESDEC-01","i":"IX","o":"SESDEC","n":1,"m":"Desenvolver cursos conjuntos entre PM, PC, Politec e Bombeiros sobre violência doméstica, direitos humanos e atendimento às vítimas.","ind":"Número de profissionais capacitados","e":"Primária","tv":"Sim","pz":"2034","ano":2034,"rec":false,"dot":"Fundo de Segurança Pública / FUNESP"},{"id":"IX-SEDUC-01","i":"IX","o":"SEDUC","n":1,"m":"Desenvolver e distribuir 1 material digital com recorte interseccional para uso em capacitações até 2026.","ind":"Número de materiais produzidos.","e":"Primária","tv":"Sim","pz":"2026","ano":2026,"rec":false,"dot":""},{"id":"IX-SEDUC-02","i":"IX","o":"SEDUC","n":2,"m":"Ampliar a oferta de formação continuada em violência de gênero para 100% dos professores, gestores e coordenadores até 2028.","ind":"% de profissionais capacitados.","e":"Primária","tv":"Não","pz":"2028","ano":2028,"rec":false,"dot":""},{"id":"IX-SEJUS-01","i":"IX","o":"SEJUS","n":1,"m":"Realizar ao menos 02 ciclos formativos por ano com foco em justiça restaurativa e direitos das mulheres até 2030.","ind":"2 ciclos anuais","e":"Terciária","tv":"Não","pz":"Bianual","ano":2030,"rec":true,"dot":""},{"id":"IX-SEJUS-02","i":"IX","o":"SEJUS","n":2,"m":"Incluir formação continuada no Plano de Desenvolvimento de Pessoas do sistema prisional até 2026.","ind":"Plano atualizado.","e":"Terciária","tv":"Sim","pz":"2027","ano":2027,"rec":false,"dot":""},{"id":"IX-SEJUS-03","i":"IX","o":"SEJUS","n":3,"m":"Criar módulo específico sobre enfrentamento à violência de gênero em todos os cursos de formação inicial e continuada até 2027.","ind":"Módulo incorporado.","e":"Primária","tv":"Sim","pz":"2027","ano":2027,"rec":false,"dot":""},{"id":"IX-PC-RO-01","i":"IX","o":"PC-RO","n":1,"m":"Implantar programa de formação continuada anual com foco em atendimento humanizado, Lei Maria da Penha e escuta qualificada até 2027.","ind":"Programa implantado.","e":"Terciária","tv":"Não","pz":"2027","ano":2027,"rec":false,"dot":""},{"id":"IX-PC-RO-02","i":"IX","o":"PC-RO","n":2,"m":"Atualizar o currículo da Academia de Polícia para incluir a capacitação recorrente é obrigatória a todos os servidores da Polícia Civil sobre violência de gênero até 2026","ind":"Currículo atualizado.","e":"Primária","tv":"Sim","pz":"2026","ano":2026,"rec":false,"dot":""},{"id":"IX-PC-RO-03","i":"IX","o":"PC-RO","n":3,"m":"Elaborar protocolo padronizado de atendimento para delegacias especializadas, com monitoramento da aplicação até 2027.","ind":"Protocolo aprovado e em execução.","e":"Terciária","tv":"Sim","pz":"2027","ano":2027,"rec":false,"dot":""},{"id":"X-SESAU-01","i":"X","o":"SESAU","n":1,"m":"Elaborar 01 cartilha sobre tipos de violência, direitos e serviços de saúde para o atendimento às mulheres em situação de violência","ind":"01 cartilha elaborada","e":"Primária","tv":"Sim","pz":"2026","ano":2026,"rec":false,"dot":""},{"id":"X-SEDUC-01","i":"X","o":"SEDUC","n":1,"m":"Realizar 2 ciclos anuais de campanha educativa em escolas estaduais sobre prevenção da violência e direitos das mulheres até 2030.","ind":"Número de ciclos realizados por ano.","e":"Primária","tv":"Não","pz":"Bianual","ano":2030,"rec":true,"dot":""},{"id":"X-SEDUC-02","i":"X","o":"SEDUC","n":2,"m":"Produzir e aplicar materiais didáticos digitais com foco na cultura de paz e equidade de gênero em 100% das escolas até 2027.","ind":"Número de escolas com acesso aos materiais.","e":"Primária","tv":"Sim","pz":"2027","ano":2027,"rec":false,"dot":""},{"id":"X-SEDUC-03","i":"X","o":"SEDUC","n":3,"m":"Articular campanhas com outras secretarias (SESAU, SEAS, PM) em pelo menos 50% das regionais até 2026.","ind":"Número de regionais com campanhas intersetoriais.","e":"Primária","tv":"Não","pz":"2026","ano":2026,"rec":false,"dot":""},{"id":"X-PM-RO-01","i":"X","o":"PM-RO","n":1,"m":"Realizar pelo menos 01 ciclo anual de palestras educativas sobre violência doméstica em escolas públicas até 2032.","ind":"Número de escolas atendidas por ano.","e":"Primária","tv":"Não","pz":"2032","ano":2032,"rec":false,"dot":""},{"id":"X-PM-RO-02","i":"X","o":"PM-RO","n":2,"m":"Capacitar 100% dos policiais da Patrulha Maria da Penha e NUPEVID em abordagem pedagógica até 2032","ind":"% de efetivo capacitado.","e":"Primária","tv":"Não","pz":"2032","ano":2032,"rec":false,"dot":""},{"id":"X-PM-RO-03","i":"X","o":"PM-RO","n":3,"m":"Criar protocolo de atuação educativa em parceria com SEDUC e SEPOG até 2032.","ind":"Protocolo publicado.","e":"Primária","tv":"Sim","pz":"2032","ano":2032,"rec":false,"dot":""},{"id":"X-SEPOG-01","i":"X","o":"SEPOG","n":1,"m":"Apoiar criação de repositório digital com peças educativas acessível a todas as secretarias envolvidas até 2026.","ind":"Repositório ativo e compartilhado.","e":"Primária","tv":"Sim","pz":"2026","ano":2026,"rec":false,"dot":""},{"id":"X-SI-01","i":"X","o":"SI","n":1,"m":"Realizar campanhas anuais sobre enfrentamento à violência contra a mulher em, no mínimo, 10 territórios indígenas até 2029.","ind":"Número de territórios atendidos por ano.","e":"Primária","tv":"Não","pz":"Anual","ano":2029,"rec":true,"dot":"23.002.08.423.2180.4152"},{"id":"X-SI-02","i":"X","o":"SI","n":2,"m":"Produzir 5 cartilhas educativas nas principais línguas indígenas até 2026, com apoio de lideranças e pesquisadores.","ind":"Número de cartilhas produzidas e distribuídas.","e":"Primária","tv":"Sim","pz":"2026","ano":2026,"rec":false,"dot":"23.002.08.423.2180.4152"},{"id":"X-SI-03","i":"X","o":"SI","n":3,"m":"Firmar parceria com SEDUC, SECOM e SEPOG para desenvolver conteúdos audiovisuais adaptados culturalmente até 2027.","ind":"Parcerias formalizadas e conteúdos publicados.","e":"Primária","tv":"Sim","pz":"2027","ano":2027,"rec":false,"dot":"23.002.08.423.2180.4152"},{"id":"X-SETUR-01","i":"X","o":"SETUR","n":1,"m":"Criação do Selo “Destino Seguro para Mulheres”, para empresas e destinos turísticos com boas práticas de proteção e acolhimento feminino.","ind":"Criação do instrumento","e":"Primária","tv":"Sim","pz":"2026","ano":2026,"rec":false,"dot":"--"},{"id":"X-SETUR-02","i":"X","o":"SETUR","n":2,"m":"Produzir uma cartilha turística para mulheres com informações de segurança, contato de emergência, e dicas de roteiro.","ind":"Número de cartilhas produzidas e distribuídas.","e":"Primária","tv":"Não","pz":"2026","ano":2026,"rec":false,"dot":"1.500. 0. 00001 Ação: 2194"},{"id":"X-SETUR-03","i":"X","o":"SETUR","n":3,"m":"Realizar campanhas sobre a prevenção e enfrentamento da violência contra a mulher em regiões estratégicas para a população local e turistas.","ind":"Número de campanhas realizadas","e":"Primária","tv":"Não","pz":"2026","ano":2026,"rec":false,"dot":"1.500. 0. 00001 Ação: 2194"},{"id":"X-SEAS-01","i":"X","o":"SEAS","n":1,"m":"Promover campanhas educativas sobre os direitos das mulheres com foco na prevenção ao assédio sexual e moral, e combate à todas as formas de violência.","ind":"Realização da campanha","e":"Primária","tv":"Não","pz":"2025","ano":2025,"rec":false,"dot":"23.016.08.244.2116.2267 23.001.08.244.2112.2509"},{"id":"X-SEAS-02","i":"X","o":"SEAS","n":2,"m":"Divulgar periodicamente o Programa Mulher Protegida, voltado para a promoção de direitos humanos das mulheres em Rondônia, nos eventos e ações desenvolvidos pela SEAS nos 52 municípios.","ind":"Número de municípios visitados","e":"Primária","tv":"Não","pz":"anual","ano":2034,"rec":true,"dot":""},{"id":"X-SEAS-03","i":"X","o":"SEAS","n":3,"m":"Divulgar periodicamente o Programa Mulher Protegida, voltado para a promoção de direitos humanos das mulheres em Rondônia, durante a execução do Programa Rondônia Cidadã, nos municípios e distritos onde são realizadas as edições.","ind":"Pessoas Atendidas","e":"Primária","tv":"Não","pz":"Anual","ano":2034,"rec":true,"dot":"PA2162/4066"},{"id":"XI-SESDEC-01","i":"XI","o":"SESDEC","n":1,"m":"Realizar e apoiar campanhas de conscientização e facilitação do acesso às delegacias, com aumento em 30% de 26.515 para 34.470 atendimentos voltado à melhoria na confiança das vítimas em denunciar.","ind":"Número de atendimentos realizados","e":"Primária","tv":"Não","pz":"2034","ano":2034,"rec":false,"dot":"Fundo de Segurança Pública / FUNESP"},{"id":"XI-SEPOG-01","i":"XI","o":"SEPOG","n":1,"m":"Publicar anualmente boletim com dados consolidados das ações intersetoriais de enfrentamento à violência até 2030.","ind":"1 boletim publicado.","e":"Primária","tv":"Sim","pz":"Anual","ano":2030,"rec":true,"dot":""},{"id":"XI-SEAS-01","i":"XI","o":"SEAS","n":1,"m":"Implantar um comitê estadual permanente para monitoramento e avaliação das ações governamentais e interinstitucionais voltadas à prevenção ao feminicídio e de enfrentamento à violência contra a mulher.","ind":"Decreto de instituição do Comitê","e":"Primária","tv":"Sim","pz":"2025","ano":2025,"rec":false,"dot":""},{"id":"XI-SEAS-02","i":"XI","o":"SEAS","n":2,"m":"Coordenar em parceria com a SESDEC a realização de reuniões institucionais do comitê estadual permanente.","ind":"Número de reuniões realizadas.","e":"Primária","tv":"Sim","pz":"2026","ano":2026,"rec":false,"dot":""},{"id":"XI-SEAS-03","i":"XI","o":"SEAS","n":3,"m":"Articular com os municípios para participarem de forma sistêmica do enfrentamento da violência contra as mulheres.","ind":"Realização de reuniões com os municípios","e":"Primária","tv":"Não","pz":"2025/2026","ano":2026,"rec":false,"dot":"23.016.08.244.2116.2267 23.001.08.244.2112.2509"},{"id":"XI-SEAS-04","i":"XI","o":"SEAS","n":4,"m":"Coordenar, em parceria com SEPOG, a implementação de sistema integrado de monitoramento das ações governamentais e interinstitucionais da Rede até 2027.","ind":"Sistema implantado e operacional","e":"Primária","tv":"Sim","pz":"2027","ano":2027,"rec":false,"dot":""},{"id":"XI-SEAS-05","i":"XI","o":"SEAS","n":5,"m":"Pactuar um fluxo estadual padronizado para o encaminhamento imediato de denúncias de violência contra as mulheres, evitando a revitimização, com a participação e integração das instâncias do Poder Judiciário e dos órgãos do Executivo estadual, incluindo a Polícia Militar, Polícia Civil, Assistência Social e Saúde, visando garantir agilidade, efetividade e proteção integral às mulheres vítimas em todas as regiões do estado.","ind":"Protocolo estadual publicado","e":"Transversal","tv":"Sim","pz":"2027","ano":2027,"rec":false,"dot":""},{"id":"XII-SEPOG-01","i":"XII","o":"SEPOG","n":1,"m":"Publicar anualmente boletim com dados consolidados das ações intersetoriais de enfrentamento à violência até 2030.","ind":"1 boletim publicado.","e":"Primária","tv":"Sim","pz":"Anual","ano":2030,"rec":true,"dot":""},{"id":"XII-SESDEC-01","i":"XII","o":"SESDEC","n":1,"m":"Promover Estudos sobre a viabilidade de Expansão unidades com atendimento 24h de 01 para 04 unidades.","ind":"Número de unidades 24h","e":"Secundária","tv":"Sim","pz":"2034","ano":2034,"rec":false,"dot":"Fundo de Segurança Pública / FUNESP"},{"id":"XII-SESDEC-02","i":"XII","o":"SESDEC","n":2,"m":"Reduzir em 15% de 7.912 para 6.725 ocorrências de ocorrências registradas.","ind":"Número de registros","e":"Primária","tv":"Não","pz":"2034","ano":2034,"rec":false,"dot":"Fundo de Segurança Pública / FUNESP"},{"id":"XII-SESDEC-03","i":"XII","o":"SESDEC","n":3,"m":"Proporcionar 01 sala reservada em cada delegacia de polícia, de modo a ampliar de 07 salas reservadas de atendimento para 12 salas.","ind":"Número de salas reservadas","e":"Terciária","tv":"Não","pz":"2034","ano":2034,"rec":false,"dot":"Fundo de Segurança Pública / FUNESP"},{"id":"XII-PM-RO-01","i":"XII","o":"PM-RO","n":1,"m":"Criar grupo-tarefa permanente com foco em estratégias inovadoras de proteção e prevenção da violência até 2032.","ind":"Grupo instituído por portaria.","e":"Primária","tv":"Sim","pz":"2032","ano":2032,"rec":false,"dot":""},{"id":"XII-PM-RO-02","i":"XII","o":"PM-RO","n":2,"m":"Firmar parcerias para ampliar a Patrulha Maria da Penha para áreas rurais e ribeirinhas até 2032.","ind":"Nº de municípios atendidos.","e":"Secundária","tv":"Não","pz":"2032","ano":2032,"rec":false,"dot":""},{"id":"XII-PM-RO-03","i":"XII","o":"PM-RO","n":3,"m":"Produzir relatórios anuais de avaliação das abordagens humanizadas da PM com base em feedbacks das vítimas até 2032.","ind":"Nº de relatórios gerados.","e":"Terciária","tv":"Sim","pz":"2032","ano":2032,"rec":false,"dot":""},{"id":"XII-EMATER-01","i":"XII","o":"EMATER","n":1,"m":"Capacitar 90 extensionistas social da EMATER na temática de prevenção e enfrentamento da violência contra a mulher.","ind":"Servidores capacitados.","e":"Primária","tv":"Não","pz":"anual","ano":2034,"rec":true,"dot":"2024/2019 - Fortalecimento da Agricultura Familiar"},{"id":"XII-EMATER-02","i":"XII","o":"EMATER","n":2,"m":"Implementar o referenciamento para 2500 mulheres rurais no acesso aos programas Mamãe Cheguei e Mulher Protegida.","ind":"Mulheres referenciadas.","e":"Secundária","tv":"Não","pz":"anual","ano":2034,"rec":true,"dot":"2024/2019 - Fortalecimento da Agricultura Familiar"},{"id":"XII-EMATER-03","i":"XII","o":"EMATER","n":3,"m":"Realizar 05 encontros periódicos por Regional da Emater alusivo aos direitos da mulher, especialmente voltado à prevenção e enfrentamento a todas as formas de violência contra a mulher.","ind":"Mulheres participantes","e":"Primária","tv":"Não","pz":"anual","ano":2034,"rec":true,"dot":"2024/2019 - Fortalecimento da Agricultura Familiar"},{"id":"XII-EMATER-04","i":"XII","o":"EMATER","n":4,"m":"Ampliar a oferta de serviços às produtoras rurais aos benefícios previdenciários do INSS.","ind":"Produtoras rurais atendidas.","e":"Terciária","tv":"Não","pz":"anual","ano":2034,"rec":true,"dot":"2024/2019 - Fortalecimento da Agricultura Familiar"},{"id":"XII-SI-01","i":"XII","o":"SI","n":1,"m":"Ampliar as campanhas educativas existentes, para as principais línguas indígenas, com participação de lideranças femininas indígenas, até 2030. Campanhas voltadas a empoderamento feminino como dia internacional da mulher, Agosto Lilás e 21 dias de ativismo contra a violência contra as mulheres.","ind":"N° de campanhas ampliadas","e":"Primária","tv":"Não","pz":"Anual","ano":2030,"rec":true,"dot":"23.002.08.426.2180.4152"},{"id":"XII-SI-02","i":"XII","o":"SI","n":2,"m":"Apoiar intermediação na criação de casas de acolhimento e escuta para mulheres indígenas em 5 territórios até 2028, bem como na divulgação da Casa da Mulher Indígena.","ind":"Nº de espaços criados e ativos.","e":"Secundária","tv":"Não","pz":"2028","ano":2028,"rec":false,"dot":"23.002.08.423.2180.4152"},{"id":"XII-SI-03","i":"XII","o":"SI","n":3,"m":"Criação do Comitê Estadual de Combate a Violência de Gênero contra Mulheres Indígenas","ind":"Portaria","e":"Terciária","tv":"Sim","pz":"2026","ano":2026,"rec":false,"dot":"23.002.08.423.2180.4152"},{"id":"XII-SI-04","i":"XII","o":"SI","n":4,"m":"Elaborar diretrizes interculturais para atenção humanizada em territórios indígenas até 2026.","ind":"Documento técnico aprovado.","e":"Terciária","tv":"Sim","pz":"2026","ano":2026,"rec":false,"dot":"23.002.08.423.2180.4152"},{"id":"XII-SEAS-01","i":"XII","o":"SEAS","n":1,"m":"Manter o Programa Mulher Protegida voltado para a assistência à mulher vítima de violência doméstica e familiar em especial a que se encontra em situação de vulnerabilidade socioeconômica através da transferência de renda, em caráter temporário, para suprir suas necessidades ordinárias; bem como referenciá-la à rede socioassistencial do município partícipe, oportunizar o acesso a cursos para capacitação e/ou aperfeiçoamento profissional com vistas à inserção no mercado de trabalho e o alcance do protagonismo econômico.","ind":"Pessoas beneficiadas.","e":"Primária","tv":"Não","pz":"Até 2035","ano":2035,"rec":false,"dot":"23.016.08.244.2116.2267 23.001.08.244.2112.2509"},{"id":"XII-SEAS-02","i":"XII","o":"SEAS","n":2,"m":"Articular junto aos municípios para que estes implementem a Casa da Mulher Brasileira até 2028.","ind":"Unidade implantada e em funcionamento","e":"Terciária","tv":"Sim","pz":"Até 2028","ano":2028,"rec":false,"dot":""},{"id":"XII-SEAS-03","i":"XII","o":"SEAS","n":3,"m":"Sistematizar as informações sobre os perfis das beneficiárias do Programa Mulher Protegida de modo a contribuir no monitoramento e avaliação das ações de prevenção e de enfrentamento que atendam às necessidades específicas da população feminina.","ind":"Banco de dados criado e atualizado periodicamente","e":"Terciária","tv":"Sim","pz":"2025/2026","ano":2026,"rec":false,"dot":""},{"id":"XII-SEAS-04","i":"XII","o":"SEAS","n":4,"m":"Articular e apoiar iniciativas que ampliem as oportunidades para a contratação em órgãos públicos, de mulheres em situação de violência, integrando-as ao mercado de trabalho como forma de promover sua autonomia e independência financeira.","ind":"Número de beneficiárias do Programa Mulher Protegida oportunizadas.","e":"Primária","tv":"Não","pz":"2026","ano":2026,"rec":false,"dot":""},{"id":"XII-SEAS-05","i":"XII","o":"SEAS","n":5,"m":"Apoiar a implantação de procedimentos administrativos padronizados nos Sistemas Judiciários, de Segurança Pública e de Justiça, para os casos de atendimento às mulheres em situação de violência e de monitoração eletrônica de agressores.","ind":"Criação de Protocolos","e":"Secundária","tv":"Sim","pz":"Até 2027","ano":2027,"rec":false,"dot":""},{"id":"XII-SEAS-06","i":"XII","o":"SEAS","n":6,"m":"Realizar visitas técnicas de monitoramento pela equipe da vigilância socioassistencial estadual em 100% dos equipamentos socioassistenciais da Rede SUAS no estado de Rondônia","ind":"Equipamentos socioassistenciais monitorados","e":"Terciária","tv":"Sim","pz":"2025/2026","ano":2026,"rec":false,"dot":""},{"id":"XII-SEAS-07","i":"XII","o":"SEAS","n":7,"m":"Ampliar e Fortalecer a Assistência Social: Investimento nos serviços de proteção social básica (CRAS) e especial (CREAS) como portas de entrada e serviços de referência para o atendimento às mulheres em situação de violência.","ind":"Equipamentos socioassistenciais","e":"Secundária","tv":"Não","pz":"2025/2026","ano":2026,"rec":false,"dot":""},{"id":"XII-SEAS-08","i":"XII","o":"SEAS","n":8,"m":"Realizar o monitoramento e a avaliação dos sistemas da Redesuas nos 52 municípios do Estado de Rondônia, com foco no Registro Mensal de Atendimentos (RMA) dos CRAS, CREAS e Centro POP, e no Sistema de Informações do Serviço de Convivência e Fortalecimento de Vínculos (SISC)","ind":"Sistemas da Rede SUAS: RMA e CISC monitorados","e":"Terciária","tv":"Sim","pz":"2025/2026","ano":2026,"rec":false,"dot":""},{"id":"XII-SEAS-09","i":"XII","o":"SEAS","n":9,"m":"Realizar divulgação do Programa Mulher Protegida nos plantões sociais nos empreendimentos habitacionais orientando as mulheres sobre direitos e mecanismos de enfrentamento à violência de gênero em todos os formatos.","ind":"Pessoas atendidas","e":"Primária","tv":"Não","pz":"12 Meses","ano":2034,"rec":true,"dot":"PA 2175/1348"},{"id":"XII-SEAS-10","i":"XII","o":"SEAS","n":10,"m":"Oportunizar às mulheres que se enquadram nos pré-requisitos do Decreto nº 26.544/2021, o acesso às políticas públicas de segurança alimentar e nutricional, através da oferta de refeições saudáveis e nutritivas.","ind":"Quantitativo de refeições servidas","e":"Primária","tv":"Não","pz":"Anual","ano":2034,"rec":true,"dot":"PA 2087"}],"titulos":{"I":"Formação Integrada e Capacitação Periódica","II":"Abordagem Integrada e Capacitação Continuada das Forças de Segurança, Cidadania e Defesa","III":"Expansão das Delegacias Especializadas da Mulher","IV":"Monitoramento Eletrônico e Acompanhamento de Mulheres","V":"Reeducação e Acompanhamento Psicossocial de Agressores","VI":"Dispositivos de Proteção e Rastreamento Pessoal","VII":"Prevenção nas Escolas e Semana de Combate à Violência","VIII":"Ampliação dos Serviços da Rede de Atendimento","IX":"Qualificação Continuada dos Profissionais Envolvidos","X":"Campanhas Educativas e de Conscientização Social","XI":"Fortalecimento das Redes Estadual e Municipal","XII":"Ações Complementares e Atenção Humanizada"}};
+var METAS = CAT.metas, TITULOS = CAT.titulos;
+var INCISOS = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+var ORGAOS = ['SEAS','SESDEC','SESAU','SEDUC','SEJUS','SEPOG','PC-RO','PM-RO','POLITEC','CBM','SETUR','SI','EMATER'];
+var EIXOS = ['Primária','Secundária','Terciária','Transversal'];
+var FONTES_RECURSO = ["1.500 - Recursos Não Vinculados de Impostos","1.501 - Recursos Vinculados ao FUNDEB","1.540 - Recursos Vinculados à Saúde","1.550 - Recursos Vinculados à Educação","1.600 - Recursos Vinculados ao FNDE","1.700 - Recursos de Convênios com a União","1.720 - Recursos de Convênios com o Estado","1.753 - Transferências Voluntárias","2.500 - Recursos Próprios da Administração Indireta","2.501 - Recursos de Operações de Crédito","2.502 - Recursos de Alienação de Bens","2.503 - Recursos de Royalties","9.999 - A classificar pela fonte"];
+var SIT = {
+  vencida:{n:'Prazo vencido',c:'var(--critico)',g:'!',o:0}, atencao:{n:'Atenção',c:'var(--atencao)',g:'▲',o:1},
+  semmed:{n:'Sem medição',c:'var(--neutro)',g:'–',o:2}, sem:{n:'Sem informação',c:'var(--vazio)',g:'',o:3},
+  ritmo:{n:'No ritmo',c:'var(--ritmo)',g:'→',o:4}, concluida:{n:'Concluída',c:'var(--bom)',g:'✓',o:5}
+};
+var ORDEM_SIT = ['concluida','ritmo','atencao','vencida','semmed','sem'];
+var porId = {}; METAS.forEach(function(m){ porId[m.id]=m; });
+var URL_GOOGLE = 'https://script.google.com/macros/s/AKfycbw3B7KCgRN0ILMp20_zTarqQwkurGUTyf4M0JrxxJl9GPxr41nWISoAVtVqVS16P34/exec';
+var DENTRO_APPS_SCRIPT = !!(window.google && google.script && google.script.run);
+
+var SEM_DISP = 'Não há dispêndio orçamentário';
+var S = {param:{},cad:{},lanc:[],res:[],orc:[],periodos:[],org:{},painelOk:false};
+var FP = {periodo:'',orgao:'',inciso:'',eixo:'',sit:'',busca:'',limite:12,aberta:''};
+var F = novoForm(''), senhaAdm = '', timerRasc = null, pedidoOrgao = 0;
+
+// ---------- utilidades ----------
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function tx(v){ return String(v==null?'':v).trim(); }
+function seguro(id){ return id.replace(/[^a-zA-Z0-9]/g,'_'); }
+function parseBR(v){
+  if(typeof v==='number') return isFinite(v)?v:null;
+  var s=String(v==null?'':v).replace(/R\$|%|\s/g,''); if(!s) return null;
+  if(s.indexOf(',')>=0) s=s.replace(/\./g,'').replace(',','.');
+  else if(/^\d{1,3}(\.\d{3})+$/.test(s)) s=s.replace(/\./g,'');
+  var n=Number(s); return isFinite(n)?n:null;
+}
+function numStr(n){ return n===''||n==null?'':String(n).replace('.',','); }
+function fmtN(n,d){ return Number(n).toLocaleString('pt-BR',{minimumFractionDigits:d||0,maximumFractionDigits:d||0}); }
+function fmtP(n){ return n==null?'–':fmtN(n,1)+'%'; }
+function fmtR(n){ return Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+function fmtRc(n){ n=Number(n||0); if(Math.abs(n)>=1e6) return 'R$ '+fmtN(n/1e6,1)+' mi'; if(Math.abs(n)>=1e3) return 'R$ '+fmtN(n/1e3,0)+' mil'; return fmtR(n); }
+function pctCalc(v,m,pol,b){
+  v=parseBR(v); m=parseBR(m); b=parseBR(b); if(v==null||m==null) return null; var p;
+  if(pol==='menor'){ if(b==null||b<=m) return null; p=(b-v)/(b-m)*100; } else { if(m<=0) return null; p=v/m*100; }
+  return Math.round(Math.min(100,Math.max(0,p))*10)/10;
+}
+function perInfo(s){ var m=/([1-3])º\s*Quadrimestre\s*(\d{4})/i.exec(s||''); if(!m) return {q:3,y:new Date().getFullYear(),fr:1,ord:0}; var q=+m[1],y=+m[2]; return {q:q,y:y,fr:q/3,ord:y*10+q}; }
+function limiteDe(c,l,per){ var d=l&&parseBR(l.Data_Limite); if(d) return d; var y=perInfo(per||S.param.periodo_referencia).y; return S.cad[c.id+'|'+y]?y:c.ano; }
+function esperado(c,lim,p){ if(c.rec||lim===p.y) return Math.min(100,p.fr*100); return Math.min(100,Math.max(0,(p.y-2025+p.fr)/(lim-2025+1)*100)); }
+function situacao(c,l,per){
+  var p=perInfo(per), lim=limiteDe(c,l,per), r={cod:'sem',pct:null,esp:esperado(c,lim,p),lim:lim};
+  if(!l) return r;
+  r.pct=l.Execucao_Pct===''||l.Execucao_Pct==null?null:Number(l.Execucao_Pct);
+  if(r.pct==null){ r.cod='semmed'; return r; }
+  if(r.pct>=100) r.cod='concluida';
+  else if(lim<p.y||(lim===p.y&&p.q===3)) r.cod='vencida';
+  else r.cod=r.pct>=r.esp*0.8?'ritmo':'atencao';
+  return r;
+}
+function media(a){ return a.length?a.reduce(function(x,y){return x+y;},0)/a.length:null; }
+function toast(t){ var e=$('toast'); e.textContent=t; e.hidden=false; clearTimeout(e._t); e._t=setTimeout(function(){e.hidden=true;},4800); }
+function msg(id,tipo,t){ $(id).innerHTML=t?'<div class="msg '+tipo+'">'+esc(t)+'</div>':''; }
+function confirmar(t,x,ok){ return new Promise(function(res){ $('modalT').textContent=t; $('modalX').textContent=x; $('modalSim').textContent=ok||'Confirmar'; $('modal').hidden=false; $('modalSim').focus();
+  function fim(v){ $('modal').hidden=true; $('modalSim').onclick=$('modalNao').onclick=null; res(v); } $('modalSim').onclick=function(){fim(true);}; $('modalNao').onclick=function(){fim(false);}; }); }
+function api(fn){ var a=[].slice.call(arguments,1); return new Promise(function(res,rej){
+  function trata(s){ var d=typeof s==='string'?JSON.parse(s):s; if(d&&d.ok) res(d); else rej(new Error(d&&d.mensagem||'Resposta inválida do servidor.')); }
+  if(!DENTRO_APPS_SCRIPT){
+    fetch(URL_GOOGLE,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({fn:fn,args:a})})
+      .then(function(r){ return r.text(); })
+      .then(function(t){ var d; try{ d=JSON.parse(t); }catch(e){ throw new Error('O Apps Script não respondeu como esperado. Confira se a nova versão foi implantada com acesso para "Qualquer pessoa".'); } trata(d); })
+      .catch(function(e){ rej(new Error(e.message==='Failed to fetch'?'Sem conexão com o Apps Script. Confira a internet e se a implantação está com acesso para "Qualquer pessoa".':e.message)); });
+    return;
+  }
+  var r=google.script.run.withSuccessHandler(trata).withFailureHandler(function(e){ rej(new Error(e&&e.message||'Falha de comunicação com a planilha.')); }); r[fn].apply(r,a); }); }
+function baixar(nome,txt){
+  var u=URL.createObjectURL(new Blob(['﻿'+txt],{type:'text/csv;charset=utf-8;'})), a=document.createElement('a'); a.href=u; a.download=nome; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){URL.revokeObjectURL(u);},2000);
+}
+function csvLinha(c){ return c.map(function(v){ v=String(v==null?'':v); if(/^[=+\-@]/.test(v)) v="'"+v; return /[;"\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }).join(';'); }
+
+// ---------- carga ----------
+function inicio(){
+  return api('apiInicio').then(function(d){
+    S.param=d.parametros; S.versaoScript=d.versao||'';
+    if(S.versaoScript!==VERSAO) msg('msgGeral','erro','Versões diferentes: a página está na v'+VERSAO+' e o script na v'+(S.versaoScript||'anterior')+'. Atualize os dois arquivos no Apps Script e publique uma nova versão.');
+    if(!FP.periodo) FP.periodo=S.param.periodo_referencia;
+    $('periodoValor').textContent=S.param.periodo_referencia;
+    $('infoOficio').textContent='Ofício Global: '+S.param.oficio_base;
+  });
+}
+function carregarPainel(forcar){
+  if(S.painelOk&&!forcar){ renderPainel(); return Promise.resolve(); }
+  $('painelConteudo').hidden=true; $('painelCarregando').hidden=false; msg('msgGeral');
+  return api('apiCarregar').then(function(d){
+    S.param=d.parametros; S.cad={}; (d.cadastros||[]).forEach(function(c){ S.cad[c.id_meta+'|'+c.ano]=c; }); S.lanc=d.lancamentos||[]; S.res=d.resultados||[]; S.orc=d.orcamento||[];
+    S.periodos=(d.periodos||[]).slice().sort(function(a,b){return perInfo(b).ord-perInfo(a).ord;});
+    if(!FP.periodo||S.periodos.indexOf(FP.periodo)<0) FP.periodo=S.param.periodo_referencia;
+    S.painelOk=true; montarFiltros(); $('painelCarregando').hidden=true; $('painelConteudo').hidden=false; renderPainel();
+  }).catch(function(e){ $('painelCarregando').hidden=true; msg('msgGeral','erro','Não foi possível carregar o painel: '+e.message); });
+}
+function opts(lista,sel,vazio){ return (vazio?'<option value="">'+esc(vazio)+'</option>':'')+lista.map(function(o){ var v=o.v!==undefined?o.v:o, t=o.t||o; return '<option value="'+esc(v)+'"'+(v===sel?' selected':'')+'>'+esc(t)+'</option>'; }).join(''); }
+function montarFiltros(){
+  $('fPeriodo').innerHTML=opts(S.periodos,FP.periodo);
+  $('fOrgao').innerHTML=opts(ORGAOS,FP.orgao,'Todos os órgãos');
+  $('fInciso').innerHTML=opts(INCISOS.map(function(i){return {v:i,t:'Inciso '+i+' · '+TITULOS[i]};}),FP.inciso,'Todos os resultados');
+  $('fEixo').innerHTML=opts(EIXOS,FP.eixo,'Todos os eixos');
+}
+
+// ---------- painel ----------
+function linhasPainel(per){
+  var mapa={}; S.lanc.forEach(function(l){ if(l.Periodo===per) mapa[l.ID_Meta]=l; });
+  return METAS.filter(function(c){ return (!FP.orgao||c.o===FP.orgao)&&(!FP.inciso||c.i===FP.inciso)&&(!FP.eixo||c.e===FP.eixo); })
+    .map(function(c){ var l=mapa[c.id]; return {c:c,l:l,s:situacao(c,l,per)}; });
+}
+function resumo(L){
+  var med=L.filter(function(x){return x.s.pct!=null;}).map(function(x){return x.s.pct;});
+  var prev=0,exec=0; L.forEach(function(x){ if(x.l){ prev+=Number(x.l.Recurso_Previsto)||0; exec+=Number(x.l.Recurso_Executado)||0; } });
+  return {n:L.length,inf:L.filter(function(x){return x.l;}).length,med:med.length,exec:media(med),prev:prev,gasto:exec,fin:prev>0?exec/prev*100:null,venc:L.filter(function(x){return x.s.cod==='vencida';}).length};
+}
+function barra(attr,nome,sub,pct,dica,press){
+  return '<button type="button" class="barra" '+attr+' aria-pressed="'+(press?'true':'false')+'" data-dica="'+esc(dica)+'"><span class="nome">'+esc(nome)+(sub?'<small>'+esc(sub)+'</small>':'')+'</span><span class="trilho"><i style="width:'+(pct||0)+'%"></i></span><span class="val">'+fmtP(pct)+'</span></button>';
+}
+function renderPainel(){
+  var L=linhasPainel(FP.periodo), R=resumo(L), nt=L.filter(function(x){return x.l&&x.l.Teste==='Sim';}).length;
+  $('avisoTestePainel').innerHTML=nt?'<div class="msg info">Este recorte inclui '+nt+' registro(s) de teste. Para retirá-los, use Administração &gt; Registros enviados.</div>':'';
+  $('kpis').innerHTML=[
+    ['Metas no recorte',fmtN(R.n),'de '+METAS.length+' no Anexo I',''],
+    ['Metas informadas',R.n?fmtP(R.inf/R.n*100):'–',R.inf+' de '+R.n+' metas',''],
+    ['Execução física média',fmtP(R.exec),R.med?'média de '+R.med+' metas medidas':'nenhuma meta medida',''],
+    ['Execução financeira',fmtP(R.fin),R.prev?fmtRc(R.gasto)+' de '+fmtRc(R.prev):'sem recurso previsto informado',''],
+    ['Prazo vencido',fmtN(R.venc),'metas abaixo de 100% após a data limite',R.venc?'alerta':'']
+  ].map(function(k){return '<div class="kpi '+k[3]+'"><span>'+k[0]+'</span><b>'+k[1]+'</b><small>'+esc(k[2])+'</small></div>';}).join('');
+  var cont={}; ORDEM_SIT.forEach(function(k){cont[k]=0;}); L.forEach(function(x){cont[x.s.cod]++;});
+  $('situacao').innerHTML='<div class="seg" role="img" aria-label="'+esc(ORDEM_SIT.map(function(k){return SIT[k].n+': '+cont[k];}).join(', '))+'">'+ORDEM_SIT.filter(function(k){return cont[k];}).map(function(k){return '<i style="flex:'+cont[k]+' 1 0;background:'+SIT[k].c+'" data-dica="'+esc(SIT[k].n+': '+cont[k]+' metas ('+fmtN(cont[k]/R.n*100,1)+'%)')+'"></i>';}).join('')+'</div>'+
+    '<div class="leg">'+ORDEM_SIT.map(function(k){return '<button type="button" class="chip" data-sit="'+k+'" aria-pressed="'+(FP.sit===k)+'">'+pt(k)+esc(SIT[k].n)+' <b>'+cont[k]+'</b></button>';}).join('')+'</div>';
+  $('porInciso').innerHTML=INCISOS.map(function(i){ var X=L.filter(function(x){return x.c.i===i;}); if(!X.length) return ''; var r=resumo(X); return barra('data-inc="'+i+'"','Inciso '+i+' · '+TITULOS[i],r.inf+' de '+r.n+' metas informadas',r.exec,'Execução média de '+r.med+' metas medidas',FP.inciso===i); }).join('');
+  $('porOrgao').innerHTML='<table class="dados"><thead><tr><th>Órgão</th><th class="num">Metas</th><th class="num">Informadas</th><th class="num">Física</th><th class="num">Financeira</th><th class="num">Vencidas</th></tr></thead><tbody>'+ORGAOS.map(function(o){ var X=L.filter(function(x){return x.c.o===o;}); if(!X.length) return ''; var r=resumo(X); return '<tr><td><button type="button" class="linkb" data-org="'+esc(o)+'">'+esc(o)+'</button></td><td class="num">'+r.n+'</td><td class="num">'+r.inf+' ('+fmtN(r.inf/r.n*100)+'%)</td><td class="num">'+fmtP(r.exec)+'</td><td class="num">'+fmtP(r.fin)+'</td><td class="num">'+r.venc+'</td></tr>'; }).join('')+'</tbody></table>';
+  $('porEixo').innerHTML=EIXOS.map(function(e){ var X=L.filter(function(x){return x.c.e===e;}); if(!X.length) return ''; var r=resumo(X); return barra('data-eixo="'+esc(e)+'"',e,r.inf+' de '+r.n+' metas informadas',r.exec,'Execução média de '+r.med+' metas medidas',FP.eixo===e); }).join('');
+  renderEvolucao(); renderTabela(L);
+}
+function pt(k){ return '<span class="pt" aria-hidden="true" style="background:'+SIT[k].c+(k==='sem'?';border:1px solid #b9afb6':'')+(k==='atencao'?';color:#2b2329':'')+'">'+SIT[k].g+'</span>'; }
+function renderEvolucao(){
+  var P=S.periodos.slice().sort(function(a,b){return perInfo(a).ord-perInfo(b).ord;}).map(function(p){ return {p:p,v:resumo(linhasPainel(p)).exec}; }).filter(function(x){return x.v!=null;});
+  if(P.length<2){ $('evolucao').innerHTML='<div class="vazio">A evolução aparece a partir do segundo período com metas medidas.</div>'; return; }
+  var W=560,H=230,l=44,r=26,t=22,b=38, x=function(i){return l+i*(W-l-r)/(P.length-1);}, y=function(v){return t+(100-v)*(H-t-b)/100;};
+  var g=[0,25,50,75,100].map(function(v){return '<line x1="'+l+'" x2="'+(W-r)+'" y1="'+y(v)+'" y2="'+y(v)+'" stroke="#eee7eb"/><text x="'+(l-8)+'" y="'+(y(v)+4)+'" text-anchor="end" font-size="12" fill="#62575f">'+v+'%</text>';}).join('');
+  var d=P.map(function(p,i){return (i?'L':'M')+x(i)+' '+y(p.v);}).join(' ');
+  var pts=P.map(function(p,i){ var a=i===0?'start':i===P.length-1?'end':'middle'; return '<circle cx="'+x(i)+'" cy="'+y(p.v)+'" r="5" fill="#8e4a7a" stroke="#fff" stroke-width="2" data-dica="'+esc(p.p+': '+fmtP(p.v))+'"/><text x="'+x(i)+'" y="'+(y(p.v)-11)+'" text-anchor="'+a+'" font-size="13" font-weight="650" fill="#2b2329">'+fmtP(p.v)+'</text><text x="'+x(i)+'" y="'+(H-12)+'" text-anchor="'+a+'" font-size="12" fill="#62575f">'+esc(p.p.replace(' Quadrimestre ',' Quad. '))+'</text>'; }).join('');
+  $('evolucao').innerHTML='<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="'+esc(P.map(function(p){return p.p+' '+fmtP(p.v);}).join('; '))+'">'+g+'<path d="'+d+'" fill="none" stroke="#8e4a7a" stroke-width="2"/>'+pts+'</svg>';
+}
+function renderTabela(L){
+  var q=FP.busca.toLowerCase();
+  var X=L.filter(function(x){ return (!FP.sit||x.s.cod===FP.sit)&&(!q||(x.c.m+' '+x.c.ind+' '+x.c.o+' '+x.c.id).toLowerCase().indexOf(q)>=0); })
+    .sort(function(a,b){ return SIT[a.s.cod].o-SIT[b.s.cod].o||a.s.lim-b.s.lim||a.c.id.localeCompare(b.c.id); });
+  if(!X.length){ $('tabMetas').innerHTML='<div class="vazio">Nenhuma meta encontrada para este recorte.</div>'; return; }
+  var V=X.slice(0,FP.limite);
+  $('tabMetas').innerHTML='<table class="dados"><thead><tr><th>Situação</th><th>Meta do Plano</th><th>Órgão</th><th class="num">Prazo</th><th class="num">Execução</th><th></th></tr></thead><tbody>'+V.map(function(x){
+    var ab=FP.aberta===x.c.id, l=x.l||{};
+    var linha='<tr class="'+(ab?'aberta':'')+'"><td><span class="st">'+pt(x.s.cod)+esc(SIT[x.s.cod].n)+'</span></td><td style="min-width:280px"><span class="clamp">'+esc(x.c.m)+'</span></td><td>'+esc(x.c.o)+'</td><td class="num">'+x.s.lim+'</td><td class="num">'+fmtP(x.s.pct)+'</td><td><button type="button" class="linkb" data-abrir="'+esc(x.c.id)+'" aria-expanded="'+ab+'">'+(ab?'Fechar':'Detalhes')+'</button></td></tr>';
+    if(ab){
+      var fontes=S.orc.filter(function(o){return o.Periodo===FP.periodo&&o.ID_Meta===x.c.id;}).map(function(o){ if(o.Dotacao_Orcamentaria===SEM_DISP) return SEM_DISP; return (o.Dotacao_Orcamentaria||'Sem dotação')+' · '+(o.Fonte||'Fonte não informada')+': '+fmtR(o.Recurso_Previsto)+' previsto / '+fmtR(o.Recurso_Executado)+' executado';}).join('\n');
+      var d=[['Indicador',l.Indicador_Projeto||x.c.ind],['Meta numérica e valor alcançado',l.ID_Meta?(numStr(l.Meta_Numerica)||'–')+' / '+(numStr(l.Valor_Alcancado)||'–'):'–'],['Avanço esperado para o período',fmtP(x.s.esp)],['Prazo no Plano',x.c.pz],['Tarefa atual',l.Tarefa_Atual],['Próxima tarefa',l.Proxima_Tarefa],['Dificuldades encontradas',l.Dificuldades],['Melhorias / boas práticas',l.Melhorias_Boas_Praticas],['Ações necessárias',l.Acoes_Necessarias],['Orçamento',fontes]];
+      linha+='<tr class="det"><td colspan="6"><dl>'+d.map(function(p){return '<div><dt>'+esc(p[0])+'</dt><dd>'+esc(p[1]||'Não informado')+'</dd></div>';}).join('')+'</dl></td></tr>';
+    }
+    return linha;
+  }).join('')+'</tbody></table><div class="ferr" style="margin:10px 0 0"><span class="ajuda">Mostrando '+V.length+' de '+X.length+' metas</span>'+(X.length>V.length?'<button type="button" class="btn sec peq" id="btnMais">Mostrar mais</button>':'')+'</div>';
+}
+function csvPainel(){
+  var cab=['Período','ID da Meta','Inciso','Órgão','Eixo','Meta do Plano','Indicador','Data Limite','Situação','Execução (%)','Avanço Esperado (%)','Recurso Previsto','Recurso Executado','Tarefa Atual','Próxima Tarefa','Dificuldades','Melhorias','Ações Necessárias'];
+  var t=[csvLinha(cab)]; linhasPainel(FP.periodo).forEach(function(x){ var l=x.l||{}; t.push(csvLinha([FP.periodo,x.c.id,x.c.i,x.c.o,x.c.e,x.c.m,l.Indicador_Projeto||x.c.ind,x.s.lim,SIT[x.s.cod].n,x.s.pct==null?'':numStr(x.s.pct),numStr(Math.round(x.s.esp*10)/10),numStr(l.Recurso_Previsto),numStr(l.Recurso_Executado),l.Tarefa_Atual,l.Proxima_Tarefa,l.Dificuldades,l.Melhorias_Boas_Praticas,l.Acoes_Necessarias])); });
+  baixar('painel_plano_metas_'+FP.periodo.replace(/\W+/g,'_')+'.csv',t.join('\r\n'));
+}
+
+// ---------- formulário ----------
+function novoForm(o){ return {orgao:o,responsavel:'',email:'',metas:{},resultados:{}}; }
+function fonteVazia(){ return {codigo:'',previsto:'',executado:''}; }
+var RE_DOTACAO=/^\d{2}\.\d{3}\.\d{2}\.\d{3}\.\d{4}\.\d{4}$/;
+function codigosDotacao(t){ return String(t||'').split(/\s+/).filter(function(x){ return RE_DOTACAO.test(x); }); }
+function acoesDaMeta(c,salvas){
+  var r=[];
+  (salvas||[]).forEach(function(a){ var cs=codigosDotacao(a.dotacao); if(cs.length>1) cs.forEach(function(d,i){ r.push({dotacao:d,fontes:i===0?a.fontes:[fonteVazia()]}); }); else r.push(a); });
+  codigosDotacao(c.dot).forEach(function(d){ if(r.some(function(a){return a.dotacao===d;})) return; var livre=r.filter(function(a){return !String(a.dotacao).trim();})[0]; if(livre) livre.dotacao=d; else r.push({dotacao:d,fontes:[fonteVazia()]}); });
+  return r.length?r:[{dotacao:'',fontes:[fonteVazia()]}];
+}
+function anosMeta(sel){ var a=[]; for(var y=2025;y<=2035;y++) a.push(String(y)); sel=String(sel||''); if(sel&&a.indexOf(sel)<0){ a.push(sel); a.sort(); } return a; }
+function metasOrgao(o){ return METAS.filter(function(m){return m.o===o;}); }
+function chaveRasc(o){ return 'planometas3:'+(S.param.periodo_referencia||'')+':'+o; }
+function lerRasc(o){ try{ return JSON.parse(localStorage.getItem(chaveRasc(o))||'null'); }catch(e){ return null; } }
+function gravarRasc(){ if(!F.orgao) return; clearTimeout(timerRasc); timerRasc=setTimeout(function(){ try{ localStorage.setItem(chaveRasc(F.orgao),JSON.stringify(F)); }catch(e){} },300); }
+function apagarRasc(o){ clearTimeout(timerRasc); try{ localStorage.removeItem(chaveRasc(o)); }catch(e){} }
+function dadosDe(o){ return S.org[o]||{lancamentos:[],resultados:[],orcamento:[]}; }
+function ultimoLanc(D,id){ var atual=perInfo(S.param.periodo_referencia).ord, a=D.lancamentos.filter(function(l){return l.ID_Meta===id&&perInfo(l.Periodo).ord<=atual;}).sort(function(x,y){return perInfo(y.Periodo).ord-perInfo(x.Periodo).ord;}); return a[0]; }
+function achaFonte(acoes,dot,cod){ var r=null; (acoes||[]).forEach(function(a){ if(tx(a.dotacao)!==tx(dot)) return; a.fontes.forEach(function(f){ if(tx(f.codigo)===tx(cod)) r=f; }); }); return r; }
+function aplicarCad(m,cad){
+  m.trava_meta=false; m.trava_orc=false; m.meta_2034=''; if(!cad) return;
+  m.meta_2034=numStr(cad.meta_2034);
+  if(cad.meta_ano!==''&&cad.meta_ano!=null){ m.meta_num=numStr(cad.meta_ano); m.data_limite=String(cad.ano); m.trava_meta=true; }
+  if(cad.sem_dispendio){ m.sem_dispendio=true; m.trava_orc=true; }
+  else if(cad.acoes&&cad.acoes.length){ var ant=m.acoes; m.sem_dispendio=false; m.trava_orc=true;
+    m.acoes=cad.acoes.map(function(a){ return {dotacao:tx(a.dotacao),fontes:a.fontes.map(function(f){ var v=achaFonte(ant,a.dotacao,f.codigo), fixo=f.previsto!==''&&f.previsto!=null; return {codigo:tx(f.codigo),previsto:fixo?numStr(f.previsto):(v?v.previsto:''),previsto_fixo:fixo,executado:v?v.executado:''}; })}; }); }
+}
+function montarForm(o){
+  var f=novoForm(o), per=S.param.periodo_referencia, D=dadosDe(o), anoRef=perInfo(per).y;
+  metasOrgao(o).forEach(function(c){
+    var l=ultimoLanc(D,c.id), atual=!!(l&&l.Periodo===per), semD=false, mesmoAno=!!(l&&perInfo(l.Periodo).y===anoRef);
+    var acoes=[], orc=l?D.orcamento.filter(function(x){return x.Periodo===l.Periodo&&x.ID_Meta===c.id;}):[];
+    orc.forEach(function(x){ if(x.Dotacao_Orcamentaria===SEM_DISP){ semD=true; return; } var n=(+x.Acao_N||1)-1; acoes[n]=acoes[n]||{dotacao:tx(x.Dotacao_Orcamentaria),fontes:[]}; acoes[n].fontes.push({codigo:tx(x.Fonte),previsto:numStr(x.Recurso_Previsto),executado:atual?numStr(x.Recurso_Executado):''}); });
+    acoes=acoesDaMeta(c,acoes.filter(Boolean));
+    f.metas[c.id]={meta_num:mesmoAno?numStr(l.Meta_Numerica):'',data_limite:String(mesmoAno&&parseBR(l.Data_Limite)||anoRef),polaridade:tx(l&&l.Polaridade)||(/^reduzir/i.test(c.m)?'menor':'maior'),linha_base:l?numStr(l.Linha_de_Base):'',valor:atual?numStr(l.Valor_Alcancado):'',tarefa_atual:atual?tx(l.Tarefa_Atual):'',proxima_tarefa:atual?tx(l.Proxima_Tarefa):'',dificuldades:atual?tx(l.Dificuldades):'',melhorias:atual?tx(l.Melhorias_Boas_Praticas):'',acoes_necessarias:atual?tx(l.Acoes_Necessarias):'',sem_dispendio:semD,acoes:acoes,herdado:null};
+    if(l&&!atual) f.metas[c.id].herdado=JSON.stringify([semD,acoes]);
+  });
+  incisosDe(o).forEach(function(i){ var r=D.resultados.filter(function(x){return x.Inciso===i;}).sort(function(a,b){return perInfo(b.Periodo).ord-perInfo(a.Periodo).ord;})[0], at=r&&r.Periodo===per; f.resultados[i]={indicador:r?tx(r.Indicador):'',meta2034:r?numStr(r.Meta_2034):'',valor:at?numStr(r.Valor_Alcancado):''}; });
+  var ra=lerRasc(o);
+  if(ra&&ra.metas){ f.responsavel=ra.responsavel||''; f.email=ra.email||''; f.teste=!!ra.teste; Object.keys(ra.metas).forEach(function(k){ if(f.metas[k]) f.metas[k]=ra.metas[k]; }); Object.keys(ra.resultados||{}).forEach(function(k){ if(f.resultados[k]) f.resultados[k]=ra.resultados[k]; }); }
+  metasOrgao(o).forEach(function(c){ aplicarCad(f.metas[c.id],(D.cadastro||{})[c.id]); });
+  f.atual=metasOrgao(o)[0].id;
+  return f;
+}
+function incisosDe(o){ return INCISOS.filter(function(i){ return METAS.some(function(m){return m.o===o&&m.i===i;}); }); }
+function orcPreenchido(m){ if(m.trava_orc) return m.acoes.some(function(a){return a.fontes.some(function(x){return tx(x.executado);});})&&!m.sem_dispendio; if(m.herdado!=null) return JSON.stringify([!!m.sem_dispendio,m.acoes])!==m.herdado; return !!m.sem_dispendio||m.acoes.some(function(a){return a.fontes.some(function(x){return tx(x.previsto)||tx(x.executado);});}); }
+function preenchida(m){ return !!(tx(m.valor)||tx(m.tarefa_atual)||tx(m.proxima_tarefa)||tx(m.dificuldades)||tx(m.melhorias)||tx(m.acoes_necessarias)||orcPreenchido(m)); }
+function resPreenchido(r){ return !!(tx(r.indicador)&&tx(r.valor)); }
+function campo(id,rot,attrs,val,tipo,ajuda){ var a=tipo==='area'?'<textarea id="'+id+'" '+attrs+'>'+esc(val)+'</textarea>':'<input id="'+id+'" '+attrs+' value="'+esc(val)+'">'; return '<div><label for="'+id+'">'+rot+'</label>'+a+(ajuda?'<div class="ajuda">'+ajuda+'</div>':'')+'</div>'; }
+function acoesTravadas(id){ var s=seguro(id), m=F.metas[id];
+  if(m.sem_dispendio) return '<div class="sem-disp"><strong>'+SEM_DISP+'</strong><span class="tag">Cadastrado pela SEPOG</span></div>';
+  return '<div class="orc-topo"><h4>Ações Orçamentárias</h4><span class="tag">Cadastradas pela SEPOG</span></div>'+m.acoes.map(function(a,ia){ return '<div class="acao"><div class="linha-t"><span>Ação Orçamentária '+(ia+1)+'</span></div>'+campo(s+'-dot-'+ia,'Dotação Orçamentária','readonly',a.dotacao)+a.fontes.map(function(f,iff){ var b=s+'-'+ia+'-'+iff; return '<div class="fonte"><div class="g3 gf">'+campo(b+'-cod','Fonte de Recurso','readonly',f.codigo)+campo(b+'-prev','Recurso Previsto (R$)',f.previsto_fixo?'readonly':'inputmode="decimal" placeholder="0,00" data-num="1" data-id="'+esc(id)+'" data-a="'+ia+'" data-f="'+iff+'" data-c="previsto"',f.previsto_fixo?fmtN(parseBR(f.previsto)||0,2):f.previsto)+campo(b+'-exec','Recurso Executado (R$)','inputmode="decimal" placeholder="0,00" data-num="1" data-id="'+esc(id)+'" data-a="'+ia+'" data-f="'+iff+'" data-c="executado"',f.executado)+'</div></div>'; }).join('')+'</div>'; }).join('');
+}
+function acoesHtml(id){ var s=seguro(id), m=F.metas[id];
+  if(m.trava_orc) return acoesTravadas(id);
+  if(m.sem_dispendio) return '<div class="sem-disp"><strong>'+SEM_DISP+'</strong><button type="button" class="btn sec peq" data-op="semDisp" data-id="'+esc(id)+'">Informar orçamento</button></div>';
+  return '<div class="orc-topo"><h4>Ações Orçamentárias</h4><button type="button" class="btn sec peq" data-op="semDisp" data-id="'+esc(id)+'">Não há dispêndio orçamentário</button></div>'+m.acoes.map(function(a,ia){ return '<div class="acao"><div class="linha-t"><span>Ação Orçamentária '+(ia+1)+'</span>'+(m.acoes.length>1?'<button type="button" class="btn perigo peq" data-op="rmAcao" data-id="'+esc(id)+'" data-a="'+ia+'">Remover ação</button>':'')+'</div>'+
+    campo(s+'-dot-'+ia,'Dotação Orçamentária','data-id="'+esc(id)+'" data-a="'+ia+'" data-c="dotacao"',a.dotacao)+
+    a.fontes.map(function(f,iff){ var b=s+'-'+ia+'-'+iff; return '<div class="fonte">'+(a.fontes.length>1?'<div class="linha-t" style="color:#17606e"><span>Fonte '+(iff+1)+'</span><button type="button" class="btn perigo peq" data-op="rmFonte" data-id="'+esc(id)+'" data-a="'+ia+'" data-f="'+iff+'">Remover fonte</button></div>':'')+'<div class="g3 gf">'+
+      campo(b+'-cod','Fonte de Recurso','list="listaFontes" placeholder="Selecione ou digite" data-id="'+esc(id)+'" data-a="'+ia+'" data-f="'+iff+'" data-c="codigo"',f.codigo)+
+      campo(b+'-prev','Recurso Previsto (R$)','inputmode="decimal" placeholder="0,00" data-num="1" data-id="'+esc(id)+'" data-a="'+ia+'" data-f="'+iff+'" data-c="previsto"',f.previsto)+
+      campo(b+'-exec','Recurso Executado (R$)','inputmode="decimal" placeholder="0,00" data-num="1" data-id="'+esc(id)+'" data-a="'+ia+'" data-f="'+iff+'" data-c="executado"',f.executado)+'</div></div>'; }).join('')+
+    '<button type="button" class="btn sec peq" style="margin-top:8px" data-op="addFonte" data-id="'+esc(id)+'" data-a="'+ia+'">+ Adicionar fonte</button></div>'; }).join('')+
+  '<button type="button" class="btn sec peq" data-op="addAcao" data-id="'+esc(id)+'">+ Adicionar Ação Orçamentária</button>';
+}
+function caixaResultado(i){ var r=F.resultados[i], p=pctCalc(r.valor,r.meta2034);
+  return '<div class="caixa"><h4>Indicador do Resultado Estratégico · Inciso '+i+' · '+esc(TITULOS[i])+'</h4><div class="g3">'+
+    campo('r-'+i+'-indicador','Indicador','placeholder="A preencher" data-r="'+i+'" data-c="indicador"',r.indicador)+campo('r-'+i+'-meta2034','Meta 2034','inputmode="decimal" placeholder="Valor numérico" data-num="1" data-r="'+i+'" data-c="meta2034"',r.meta2034)+campo('r-'+i+'-valor','Valor Alcançado','inputmode="decimal" placeholder="Digite o valor" data-num="1" data-r="'+i+'" data-c="valor"',r.valor)+
+    '</div><div class="exec" style="margin-bottom:0"><span style="font-size:.84rem;font-weight:600">Execução</span><span class="trilho"><i id="rbar-'+i+'" style="width:'+(p||0)+'%"></i></span><b id="rpct-'+i+'">'+fmtP(p)+'</b></div></div>';
+}
+function cartaoMeta(c){ var id=c.id,s=seguro(id),m=F.metas[id],at='data-id="'+esc(id)+'"',p=pctCalc(m.valor,m.meta_num,m.polaridade,m.linha_base), red=/^reduzir/i.test(c.m)||m.polaridade==='menor', ok=preenchida(m), extra=tx(m.dificuldades)||tx(m.melhorias)||tx(m.acoes_necessarias);
+  return '<article class="meta-card"><div class="meta-cab"><span class="mn">'+c.i+'.'+c.n+'</span><h3>'+esc(c.m)+'</h3><span class="mchips"><span class="tag">Prazo: '+esc(c.pz)+'</span><span class="tag'+(ok?' feito':'')+'" id="st-'+s+'">'+(ok?'Preenchida':'Pendente')+'</span></span></div>'+
+  '<dl class="plano"><div><dt>Indicador no Plano</dt><dd>'+esc(c.ind)+'</dd></div><div><dt>Eixo estruturante</dt><dd>'+esc(c.e)+'</dd></div><div><dt>Eixo transversal</dt><dd>'+esc(c.tv)+'</dd></div><div><dt>Dotação no Plano</dt><dd>'+esc(c.dot||'Não informada')+'</dd></div>'+(m.meta_2034?'<div><dt>Meta 2034</dt><dd>'+esc(m.meta_2034)+'</dd></div>':'')+'</dl>'+
+  '<div class="tap"><h4>Monitoramento TAP e Orçamento</h4><div class="g3">'+
+    (m.trava_meta?campo(s+'-meta_num','Meta (valor numérico)','readonly',m.meta_num,'','Cadastrada pela SEPOG')+campo(s+'-data_limite','Meta (Ano)','readonly',m.data_limite,'','Cadastrada pela SEPOG'):
+    campo(s+'-meta_num','Meta (valor numérico)','inputmode="decimal" placeholder="Ex.: 100" data-num="1" '+at+' data-c="meta_num"',m.meta_num)+
+    '<div><label for="'+s+'-data_limite">Meta (Ano)</label><select id="'+s+'-data_limite" '+at+' data-c="data_limite">'+opts(anosMeta(m.data_limite),String(m.data_limite))+'</select></div>')+
+    campo(s+'-valor','Valor Alcançado','inputmode="decimal" placeholder="Digite o valor" data-num="1" '+at+' data-c="valor"',m.valor)+'</div>'+
+    (red?'<div class="g3" style="margin-top:10px"><div><label for="'+s+'-polaridade">Sentido do indicador</label><select id="'+s+'-polaridade" '+at+' data-c="polaridade"><option value="maior"'+(m.polaridade!=='menor'?' selected':'')+'>Quanto maior, melhor</option><option value="menor"'+(m.polaridade==='menor'?' selected':'')+'>Quanto menor, melhor (redução)</option></select></div><div id="base-'+s+'"'+(m.polaridade==='menor'?'':' hidden')+'>'+campo(s+'-linha_base','Valor de referência (linha de base)','inputmode="decimal" data-num="1" '+at+' data-c="linha_base"',m.linha_base)+'</div></div>':'')+
+    '<div class="exec"><span style="font-size:.84rem;font-weight:600">Execução</span><span class="trilho"><i id="bar-'+s+'" style="width:'+(p||0)+'%"></i></span><b id="pct-'+s+'">'+fmtP(p)+'</b></div>'+
+    '<div class="g2">'+campo(s+'-tarefa_atual','Tarefa Atual','placeholder="Descreva a tarefa atual" '+at+' data-c="tarefa_atual"',m.tarefa_atual)+campo(s+'-proxima_tarefa','Próxima Tarefa','placeholder="Descreva a próxima tarefa" '+at+' data-c="proxima_tarefa"',m.proxima_tarefa)+'</div></div>'+
+  '<div class="orc" id="acoes-'+s+'">'+acoesHtml(id)+'</div>'+
+  '<details class="extra"'+(extra?' open':'')+'><summary>Dificuldades, melhorias e ações necessárias</summary><div class="g3">'+campo(s+'-dificuldades','Dificuldades Encontradas',at+' data-c="dificuldades"',m.dificuldades,'area')+campo(s+'-melhorias','Melhorias / Boas Práticas',at+' data-c="melhorias"',m.melhorias,'area')+campo(s+'-acoes_necessarias','Ações Necessárias',at+' data-c="acoes_necessarias"',m.acoes_necessarias,'area')+'</div></details></article>';
+}
+function mostrarMeta(id,rolar){ F.atual=id; var c=porId[id], ms=metasOrgao(F.orgao), n=ms.map(function(x){return x.id;}).indexOf(id), ant=ms[n-1], prox=ms[n+1];
+  document.querySelectorAll('.it').forEach(function(b){ if(b.dataset.ir===id) b.setAttribute('aria-current','true'); else b.removeAttribute('aria-current'); });
+  $('painelMeta').innerHTML=caixaResultado(c.i)+cartaoMeta(c)+'<div class="nav-meta"><button type="button" class="btn sec" data-ir="'+(ant?esc(ant.id):'')+'"'+(ant?'':' disabled')+'>Meta anterior</button><span>Meta '+(n+1)+' de '+ms.length+'</span><button type="button" class="btn" data-ir="'+(prox?esc(prox.id):'')+'"'+(prox?'':' disabled')+'>Próxima meta</button></div>';
+  if(rolar) $('painelMeta').scrollIntoView({block:'start'});
+}
+function renderForm(){
+  var box=$('formMetas');
+  if(!F.orgao){ box.innerHTML='<div class="msg info" style="margin:0">Selecione a unidade no Bloco 1 para ver os resultados e projetos.</div>'; return; }
+  box.innerHTML=(F.teste?'<div class="msg info">Modo de teste: este envio ficará marcado como teste na planilha.</div>':'')+'<div class="progresso"><span id="progTxt"></span><span class="trilho"><i id="progBar"></i></span></div><div class="mestre"><nav class="lista" aria-label="Metas da unidade">'+incisosDe(F.orgao).map(function(i){ return '<div class="grp"><div class="grp-t"><span>Inciso '+i+' · '+esc(TITULOS[i])+'</span><span class="tag" id="cont-'+i+'"></span></div>'+metasOrgao(F.orgao).filter(function(m){return m.i===i;}).map(function(c){ var s=seguro(c.id); return '<button type="button" class="it" data-ir="'+esc(c.id)+'"><span class="mn">'+c.i+'.'+c.n+'</span><span class="it-t">'+esc(c.m)+'</span><span class="it-s" id="tag-'+s+'"></span></button>'; }).join('')+'</div>'; }).join('')+'</nav><div id="painelMeta"></div></div>';
+  metasOrgao(F.orgao).forEach(function(c){ marcar(c.id); }); mostrarMeta(F.atual); atualizarProgresso();
+}
+function marcar(id){ var s=seguro(id), ok=preenchida(F.metas[id]), a=$('tag-'+s), b=$('st-'+s); if(a){ a.textContent=ok?'✓':''; a.className='it-s'+(ok?' feito':''); a.setAttribute('aria-label',ok?'Preenchida':'Pendente'); } if(b){ b.textContent=ok?'Preenchida':'Pendente'; b.className='tag'+(ok?' feito':''); } }
+function atualizarProgresso(){ if(!F.orgao) return; var ms=metasOrgao(F.orgao), n=ms.filter(function(c){return preenchida(F.metas[c.id]);}).length; $('progTxt').textContent=n+' de '+ms.length+' metas preenchidas'; $('progBar').style.width=(ms.length?n/ms.length*100:0)+'%';
+  incisosDe(F.orgao).forEach(function(i){ var x=ms.filter(function(c){return c.i===i;}); $('cont-'+i).textContent=x.filter(function(c){return preenchida(F.metas[c.id]);}).length+'/'+x.length; }); }
+function trocarOrgao(o){
+  var ped=++pedidoOrgao; F=novoForm(''); $('resultadoArea').hidden=true; msg('msgForm');
+  if(!o){ $('responsavel').value=''; $('email').value=''; renderForm(); return; }
+  $('formMetas').innerHTML='<div class="msg info" style="margin:0">Carregando as metas de '+esc(o)+'…</div>';
+  var pronto=api('apiDadosOrgao',o).then(function(d){ S.org[o]=d; });
+  pronto.catch(function(e){ if(ped===pedidoOrgao) msg('msgForm','erro','Não foi possível buscar os envios anteriores de '+o+': '+e.message+' Você pode preencher normalmente.'); }).then(function(){ if(ped!==pedidoOrgao) return; F=montarForm(o); $('responsavel').value=F.responsavel; $('email').value=F.email; renderForm(); });
+}
+function aoDigitar(e){ var t=e.target, d=t.dataset; if(!d.c) return;
+  if(d.num){ var lim=t.value.replace(/[^0-9.,%]/g,''); if(lim!==t.value) t.value=lim; }
+  t.classList.remove('invalido');
+  if(d.r){ F.resultados[d.r][d.c]=t.value; var r=F.resultados[d.r],p=pctCalc(r.valor,r.meta2034); $('rpct-'+d.r).textContent=fmtP(p); $('rbar-'+d.r).style.width=(p||0)+'%'; gravarRasc(); return; }
+  var m=F.metas[d.id]; if(!m) return; var s=seguro(d.id);
+  if(d.f!==undefined) m.acoes[+d.a].fontes[+d.f][d.c]=t.value; else if(d.a!==undefined) m.acoes[+d.a][d.c]=t.value; else m[d.c]=t.value;
+  if(d.c==='polaridade') $('base-'+s).hidden=t.value!=='menor';
+  var q=pctCalc(m.valor,m.meta_num,m.polaridade,m.linha_base); $('pct-'+s).textContent=fmtP(q); $('bar-'+s).style.width=(q||0)+'%';
+  marcar(d.id); atualizarProgresso(); gravarRasc();
+}
+function aoClicarForm(e){ var n=e.target.closest('[data-ir]'); if(n){ if(n.dataset.ir) mostrarMeta(n.dataset.ir,true); return; }
+  var b=e.target.closest('[data-op]'); if(!b) return; var d=b.dataset,m=F.metas[d.id];
+  if(d.op==='semDisp') m.sem_dispendio=!m.sem_dispendio;
+  if(d.op==='addAcao') m.acoes.push({dotacao:'',fontes:[fonteVazia()]});
+  if(d.op==='rmAcao') m.acoes.splice(+d.a,1);
+  if(d.op==='addFonte') m.acoes[+d.a].fontes.push(fonteVazia());
+  if(d.op==='rmFonte') m.acoes[+d.a].fontes.splice(+d.f,1);
+  $('acoes-'+seguro(d.id)).innerHTML=acoesHtml(d.id); marcar(d.id); gravarRasc(); atualizarProgresso();
+}
+function validar(){
+  var er=[];
+  function falha(idCampo,meta,t){ er.push({campo:idCampo,meta:meta,t:t}); }
+  document.querySelectorAll('.invalido').forEach(function(x){x.classList.remove('invalido');});
+  if(!F.orgao){ falha('orgao',null,'Selecione a unidade.'); return er; }
+  metasOrgao(F.orgao).forEach(function(c){ var m=F.metas[c.id]; if(!preenchida(m)) return; var s=seguro(c.id), r=c.i+'.'+c.n;
+    if(!/^20\d{2}$/.test(m.data_limite)) falha(s+'-data_limite',c.id,'Meta '+r+': escolha o ano da meta.');
+    if(tx(m.valor)){ if(parseBR(m.valor)==null) falha(s+'-valor',c.id,'Meta '+r+': valor alcançado inválido.');
+      if(!(parseBR(m.meta_num)>0)) falha(s+'-meta_num',c.id,'Meta '+r+': informe a meta numérica para calcular a execução.');
+      if(m.polaridade==='menor'&&!(parseBR(m.linha_base)>parseBR(m.meta_num))) falha(s+'-linha_base',c.id,'Meta '+r+': na redução, a linha de base deve ser maior que a meta.'); }
+  });
+  return er;
+}
+function mostrarErros(er){ msg('msgForm','erro',(er.length>1?er.length+' pendências. ':'')+er.slice(0,4).map(function(x){return x.t;}).join(' ')+(er.length>4?' …':'')); var p=er[0]; if(p.meta) mostrarMeta(p.meta); er.forEach(function(x){ var c=$(x.campo); if(c) c.classList.add('invalido'); }); var c=$(p.campo); if(c){ c.focus(); c.scrollIntoView({block:'center'}); } }
+function montarPayload(){
+  return {versao:VERSAO,teste:!!F.teste,orgao:F.orgao,responsavel:$('responsavel').value.trim(),email:$('email').value.trim(),
+    resultados:incisosDe(F.orgao).filter(function(i){return resPreenchido(F.resultados[i]);}).map(function(i){var r=F.resultados[i];return {inciso:i,resultado:TITULOS[i],indicador:r.indicador,meta2034:parseBR(r.meta2034),valor:parseBR(r.valor)};}),
+    projetos:metasOrgao(F.orgao).filter(function(c){return preenchida(F.metas[c.id]);}).map(function(c){var m=F.metas[c.id];return {id_meta:c.id,inciso:c.i,resultado:TITULOS[c.i],meta:c.m,eixo:c.e,indicador:c.ind,sem_dispendio:!!m.sem_dispendio,meta_num:parseBR(m.meta_num),data_limite:parseBR(m.data_limite),polaridade:m.polaridade,linha_base:m.polaridade==='menor'?parseBR(m.linha_base):null,valor:parseBR(m.valor),tarefa_atual:m.tarefa_atual,proxima_tarefa:m.proxima_tarefa,dificuldades:m.dificuldades,melhorias:m.melhorias,acoes_necessarias:m.acoes_necessarias,
+      acoes:m.sem_dispendio?[{dotacao:SEM_DISP,fontes:[{codigo:'',previsto:0,executado:0}]}]:m.acoes.map(function(a){return {dotacao:a.dotacao,fontes:a.fontes.filter(function(x){return tx(x.codigo)||tx(x.previsto)||tx(x.executado);}).map(function(x){return {codigo:x.codigo,previsto:parseBR(x.previsto),executado:parseBR(x.executado)};})};}).filter(function(a){return a.fontes.length;})};})};
+}
+function enviar(){
+  msg('msgForm'); F.responsavel=$('responsavel').value; F.email=$('email').value;
+  var er=validar(); if(er.length){ mostrarErros(er); return; }
+  if(!$('responsavel').value.trim()){ $('responsavel').classList.add('invalido'); $('responsavel').focus(); msg('msgForm','erro','Preencha o Responsável pelo Preenchimento.'); return; }
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test($('email').value.trim())){ $('email').classList.add('invalido'); $('email').focus(); msg('msgForm','erro','Informe um E-mail Institucional válido.'); return; }
+  var p=montarPayload(), tot=metasOrgao(F.orgao).length; if(!p.projetos.length){ msg('msgForm','erro','Preencha ao menos uma meta antes de enviar.'); return; }
+  confirmar('Enviar para a SEPOG?',F.orgao+': '+p.projetos.length+' de '+tot+' metas preenchidas no '+S.param.periodo_referencia+'. Se a meta já foi enviada neste período, os dados serão atualizados.','Enviar').then(function(sim){ if(!sim) return;
+    var b=$('btnEnviar'), o=F.orgao; b.disabled=true; b.textContent='Enviando…';
+    api('apiEnviar',JSON.stringify(p)).then(function(r){ apagarRasc(o); delete S.org[o]; S.painelOk=false; if(F.orgao===o) metasOrgao(o).forEach(function(c){ if(preenchida(F.metas[c.id])) F.metas[c.id].herdado=null; }); msg('msgForm','ok','Enviado com sucesso. Protocolo '+r.id_envio+': '+r.metas+' metas gravadas na planilha.'); $('msgForm').scrollIntoView({block:'center'}); })
+      .catch(function(e){ msg('msgForm','erro','Não foi possível enviar: '+e.message+' Seus dados continuam nesta tela.'); })
+      .then(function(){ b.disabled=false; b.textContent='Enviar para a SEPOG'; });
+  });
+}
+function gerarResumo(){
+  msg('msgForm'); var er=validar(); if(er.length){ mostrarErros(er); return; }
+  var p=montarPayload(); if(!p.projetos.length&&!p.resultados.length){ msg('msgForm','erro','Preencha ao menos uma meta para gerar o resumo.'); return; }
+  var fem=S.param.destinatario_genero!=='M', tab='width:100%;border-collapse:collapse;font-size:10pt;margin:8px 0 18px', th='border:1px solid #000;padding:5px;background:#e0e0e0;text-align:center;font-weight:bold', td='border:1px solid #000;padding:5px;vertical-align:top';
+  function tr(c){ return '<tr>'+c.map(function(x){return '<td style="'+td+'">'+x+'</td>';}).join('')+'</tr>'; }
+  function cab(c){ return '<tr>'+c.map(function(x){return '<th style="'+th+'">'+x+'</th>';}).join('')+'</tr>'; }
+  var h='<p>À Sua Excelência, '+(fem?'a Senhora':'o Senhor')+',</p><p style="margin:0;font-weight:bold;text-transform:uppercase">'+esc(S.param.destinatario_nome)+'</p><p style="margin:0 0 18px">'+esc(S.param.destinatario_cargo)+'</p>'+
+   '<p><strong>Assunto: Informações quadrimestrais dos indicadores de resultado do Plano de Enfrentamento à Violência contra a Mulher (Lei nº 14.899/2024).</strong></p><p>'+(fem?'Senhora Secretária':'Senhor Secretário')+',</p>'+
+   '<p>Com cordiais cumprimentos, vimos por meio deste encaminhar as informações atualizadas referentes ao monitoramento do Plano Estadual de Metas para o Enfrentamento Integrado da Violência Doméstica e Familiar contra a Mulher, relativas ao <strong>'+esc(S.param.periodo_referencia)+'</strong>, conforme solicitado no Ofício nº '+esc(S.param.oficio_base)+'.</p><p>As informações prestadas pela unidade <strong>'+esc(F.orgao)+'</strong> encontram-se detalhadas nas tabelas abaixo:</p>';
+  if(p.resultados.length) h+='<p style="font-weight:bold;margin-bottom:0">Tabela 1 — Resultados Estratégicos</p><table style="'+tab+'">'+cab(['Resultado Estratégico','Indicador','Meta 2034','Valor Alcançado','Execução (%)'])+p.resultados.map(function(r){return tr([esc('Inciso '+r.inciso+' · '+r.resultado),esc(r.indicador),esc(numStr(r.meta2034)||'-'),esc(numStr(r.valor)||'-'),fmtP(pctCalc(r.valor,r.meta2034))]);}).join('')+'</table>';
+  if(p.projetos.length){ h+='<p style="font-weight:bold;margin-bottom:0">Tabela '+(p.resultados.length?2:1)+' — Resultados e Projetos</p><table style="'+tab+'">'+cab(['Projeto','Indicador','Meta (Ano)','Valor Alcançado','Execução (%)','Dotação Orçamentária','Fontes (Prev/Exec)','Qualitativos']);
+    INCISOS.forEach(function(i){ var X=p.projetos.filter(function(x){return x.inciso===i;}); if(!X.length) return; h+='<tr><td colspan="8" style="'+td+';background:#f0f0f0;font-weight:bold">Inciso '+i+' · '+esc(TITULOS[i])+'</td></tr>'; X.forEach(function(x){
+      var dots=x.acoes.map(function(a){return esc(a.dotacao);}).filter(Boolean).join('<br>')||'-', fs=[]; if(!x.sem_dispendio) x.acoes.forEach(function(a){a.fontes.forEach(function(f){fs.push(esc(f.codigo||'Fonte não informada')+': '+fmtR(f.previsto)+' / '+fmtR(f.executado));});});
+      h+=tr([esc(x.meta),esc(x.indicador),esc((numStr(x.meta_num)||'-')+' (até '+x.data_limite+')'),esc(numStr(x.valor)||'-'),fmtP(pctCalc(x.valor,x.meta_num,x.polaridade,x.linha_base)),dots,fs.join('<br>')||'-','Dif: '+esc(x.dificuldades||'-')+'<br>Mel: '+esc(x.melhorias||'-')+'<br>Ações: '+esc(x.acoes_necessarias||'-')]); }); });
+    h+='</table>'; }
+  h+='<p style="margin-top:30px">Respeitosamente,</p><br><p style="text-align:center;margin:0">XXXXXXXXXXXXXXXXXXXXXXXXX</p><p style="text-align:center;margin:0">XXXXXXXXXXXXXXXXXXXXXXXX - '+esc(F.orgao)+'</p>';
+  $('oficio-conteudo').innerHTML=h; $('resultadoArea').hidden=false; $('resultadoArea').scrollIntoView({behavior:'smooth'});
+}
+function copiarOficio(){ var el=$('oficio-conteudo'), r=document.createRange(), s=getSelection(), ok=false; r.selectNodeContents(el); s.removeAllRanges(); s.addRange(r); try{ ok=document.execCommand('copy'); }catch(e){} s.removeAllRanges();
+  if(ok){ toast('Ofício e tabelas copiados. Cole no editor do SEI.'); return; }
+  if(navigator.clipboard&&window.ClipboardItem){ navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([el.innerHTML],{type:'text/html'}),'text/plain':new Blob([el.innerText],{type:'text/plain'})})]).then(function(){toast('Ofício e tabelas copiados. Cole no editor do SEI.');},function(){toast('Selecione o texto e use Ctrl+C.');}); } else toast('Selecione o texto e use Ctrl+C.');
+}
+function csvForm(){
+  if(!F.orgao){ msg('msgForm','erro','Selecione a unidade.'); return; }
+  var p=montarPayload(), cab=['Período','Órgão','Responsável','E-mail','Resultado Estratégico','Indicador do Resultado','Meta 2034 (Resultado)','Valor Alcançado (Resultado)','% (Resultado)','Projeto (Meta)','Indicador','Meta Numérica','Meta (Ano)','Valor Alcançado (Projeto)','% (Projeto)','Tarefa Atual','Próxima Tarefa','Dotação Orçamentária','Fontes (Prev/Exec)','Dificuldades','Melhorias','Ações Necessárias'], t=[csvLinha(cab)];
+  p.projetos.forEach(function(x){ var r=F.resultados[x.inciso], fs=[], ds=[]; x.acoes.forEach(function(a){ if(a.dotacao) ds.push(a.dotacao); if(!x.sem_dispendio) a.fontes.forEach(function(f){fs.push((f.codigo||'Fonte não informada')+': '+fmtR(f.previsto)+' / '+fmtR(f.executado));}); });
+    t.push(csvLinha([S.param.periodo_referencia,F.orgao,p.responsavel,p.email,'Inciso '+x.inciso+' · '+x.resultado,r.indicador,r.meta2034,r.valor,fmtP(pctCalc(r.valor,r.meta2034)),x.meta,x.indicador,numStr(x.meta_num),x.data_limite,numStr(x.valor),fmtP(pctCalc(x.valor,x.meta_num,x.polaridade,x.linha_base)),x.tarefa_atual,x.proxima_tarefa,ds.join(' | '),fs.join(' | '),x.dificuldades,x.melhorias,x.acoes_necessarias])); });
+  if(t.length<2){ msg('msgForm','erro','Preencha ao menos uma meta para baixar a planilha.'); return; }
+  baixar('monitoramento_violencia_mulher_'+F.orgao+'_'+S.param.periodo_referencia.replace(/\W+/g,'_')+'.csv',t.join('\r\n'));
+}
+function preencherTeste(){
+  if(!F.orgao){ msg('msgForm','erro','Selecione a unidade para preencher com dados de teste.'); return; }
+  confirmar('Preencher com dados de teste?','Todas as metas de '+F.orgao+' receberão valores fictícios. Ao enviar, os registros ficam marcados como teste e substituem o que já foi enviado neste período para essas metas.','Preencher').then(function(sim){ if(!sim) return;
+    function alea(a,b){ return Math.round(a+Math.random()*(b-a)); }
+    F.teste=true; F.responsavel='TESTE DO SISTEMA'; F.email='teste@ro.gov.br'; $('responsavel').value=F.responsavel; $('email').value=F.email;
+    incisosDe(F.orgao).forEach(function(i){ var mt=alea(100,2000); F.resultados[i]={indicador:'Indicador de teste do inciso '+i,meta2034:String(mt),valor:String(alea(0,mt))}; });
+    metasOrgao(F.orgao).forEach(function(c,n){ var m=F.metas[c.id];
+      if(n%5===4){ m.valor=''; m.tarefa_atual=''; m.proxima_tarefa=''; m.dificuldades=''; m.melhorias=''; m.acoes_necessarias=''; return; }
+      if(!m.trava_meta){ m.meta_num=String(alea(10,500)); m.data_limite=String(perInfo(S.param.periodo_referencia).y); }
+      var meta=parseBR(m.meta_num);
+      if(m.polaridade==='menor'){ m.linha_base=String(Math.round(meta*1.3)+1); m.valor=String(alea(meta,parseBR(m.linha_base))); } else m.valor=String(alea(Math.round(meta*.1),Math.round(meta*1.05)));
+      m.tarefa_atual='TESTE: tarefa em execução'; m.proxima_tarefa='TESTE: próxima tarefa'; m.dificuldades=n%2?'TESTE: dificuldade registrada':''; m.melhorias=''; m.acoes_necessarias=n%2?'TESTE: ação necessária':'';
+      if(m.trava_orc){ m.acoes.forEach(function(a){ a.fontes.forEach(function(f){ if(!tx(f.previsto)) f.previsto=String(alea(1000,90000)); f.executado=String(alea(0,parseBR(f.previsto)||1000)); }); }); return; }
+      m.sem_dispendio=n%4===3; m.acoes.forEach(function(a){ a.fontes.forEach(function(f){ var pv=alea(1000,90000); f.codigo=FONTES_RECURSO[0]; f.previsto=String(pv); f.executado=String(alea(0,pv)); }); });
+    });
+    gravarRasc(); renderForm(); toast('Dados de teste preenchidos. Revise e clique em Enviar para a SEPOG.');
+  });
+}
+function limpar(){
+  confirmar('Limpar dados?','Isso apaga tudo o que está preenchido nesta tela. O que já foi enviado à SEPOG continua na planilha e volta a aparecer quando a unidade for selecionada.','Limpar').then(function(sim){ if(!sim) return;
+    ORGAOS.forEach(apagarRasc);
+    pedidoOrgao++; F=novoForm(''); $('orgao').value=''; $('responsavel').value=''; $('email').value='';
+    document.querySelectorAll('#v-preencher .invalido').forEach(function(x){x.classList.remove('invalido');});
+    $('oficio-conteudo').innerHTML=''; $('resultadoArea').hidden=true; msg('msgForm'); renderForm();
+    window.scrollTo(0,0); toast('Dados da tela limpos.');
+  });
+}
+
+// ---------- administração ----------
+var A={dados:null,c:null};
+function adm(acao,d){ return api('apiAdmin',senhaAdm,acao,d?JSON.stringify(d):''); }
+function anoReferencia(){ return perInfo(S.param.periodo_referencia).y; }
+function preencherParam(){ var p=S.param; $('inputPeriodo').value=p.periodo_referencia; $('inputOficio').value=p.oficio_base; $('inputDestNome').value=p.destinatario_nome; $('inputDestCargo').value=p.destinatario_cargo; $('inputDestGenero').value=p.destinatario_genero||'F'; }
+function recarregarAdmin(){ return adm('admin_dados').then(function(d){ A.dados=d; opcoesCadMeta(); montarFiltrosReg(); renderRegistros(); }); }
+function abrirSub(n){ document.querySelectorAll('.subaba').forEach(function(b){ b.setAttribute('aria-selected',String(b.dataset.sub===n)); }); ['param','cad','reg','ver'].forEach(function(k){ $('sub-'+k).hidden=k!==n; }); }
+function cadastrada(id,ano){ return (A.dados&&A.dados.cadastros||[]).some(function(c){return c.id_meta===id&&Number(c.ano)===Number(ano);}); }
+function opcoesCadMeta(){ var o=$('cadOrgao').value, ano=$('cadAno').value, atual=$('cadMeta').value; $('cadMeta').innerHTML=opts(metasOrgao(o).map(function(m){return {v:m.id,t:(cadastrada(m.id,ano)?'✓ ':'')+m.i+'.'+m.n+' · '+m.m.slice(0,95)};}),atual,o?'Selecione o Projeto...':'Selecione o órgão primeiro'); }
+function abrirCadastro(){ var id=$('cadMeta').value, ano=$('cadAno').value; msg('msgCad'); $('cadForm').innerHTML=''; A.c=null; if(!id||!ano) return;
+  $('cadForm').innerHTML='<div class="msg info">Carregando o cadastro…</div>';
+  adm('cadastro_ler',{id_meta:id,ano:Number(ano)}).then(function(r){ var cd=r.cadastro,u=r.ultimo,c=porId[id], mesmo=u&&Number(u.data_limite)===Number(ano), base;
+    function conv(l){ return l.map(function(a){return {dotacao:tx(a.dotacao),fontes:a.fontes.map(function(f){return {codigo:tx(f.codigo),previsto:numStr(f.previsto)};})};}); }
+    if(cd&&cd.acoes.length) base=conv(cd.acoes); else if(u&&u.acoes.length) base=conv(u.acoes); else base=acoesDaMeta(c,[]).map(function(a){return {dotacao:a.dotacao,fontes:[{codigo:'',previsto:''}]};});
+    A.c={id:id,ano:Number(ano),existe:!!cd,meta_ano:cd?numStr(cd.meta_ano):(mesmo?numStr(u.meta_num):''),meta_2034:cd?numStr(cd.meta_2034):'',sem:cd?!!cd.sem_dispendio:!!(u&&u.sem_dispendio),acoes:base,u:u}; renderCadastro();
+  }).catch(function(e){ $('cadForm').innerHTML=''; msg('msgCad','erro',e.message); });
+}
+function cadOrcHtml(){ var C=A.c; if(C.sem) return '<div class="sem-disp"><strong>'+SEM_DISP+'</strong><button type="button" class="btn sec peq" data-cop="sem">Informar orçamento</button></div>';
+  return '<div class="orc-topo"><h4>Ações Orçamentárias</h4><button type="button" class="btn sec peq" data-cop="sem">Não há dispêndio orçamentário</button></div>'+C.acoes.map(function(a,ia){ return '<div class="acao"><div class="linha-t"><span>Ação Orçamentária '+(ia+1)+'</span>'+(C.acoes.length>1?'<button type="button" class="btn perigo peq" data-cop="rmA" data-a="'+ia+'">Remover ação</button>':'')+'</div>'+campo('cad-dot-'+ia,'Dotação Orçamentária','data-a="'+ia+'" data-k="dotacao"',a.dotacao)+a.fontes.map(function(f,iff){ return '<div class="fonte">'+(a.fontes.length>1?'<div class="linha-t" style="color:#17606e"><span>Fonte '+(iff+1)+'</span><button type="button" class="btn perigo peq" data-cop="rmF" data-a="'+ia+'" data-f="'+iff+'">Remover fonte</button></div>':'')+'<div class="g2">'+campo('cad-cod-'+ia+'-'+iff,'Fonte de Recurso','list="listaFontes" placeholder="Selecione ou digite" data-a="'+ia+'" data-f="'+iff+'" data-k="codigo"',f.codigo)+campo('cad-prev-'+ia+'-'+iff,'Recurso Previsto (R$)','inputmode="decimal" placeholder="0,00" data-num="1" data-a="'+ia+'" data-f="'+iff+'" data-k="previsto"',f.previsto)+'</div></div>'; }).join('')+'<button type="button" class="btn sec peq" style="margin-top:8px" data-cop="addF" data-a="'+ia+'">+ Adicionar fonte</button></div>'; }).join('')+'<button type="button" class="btn sec peq" data-cop="addA">+ Adicionar Ação Orçamentária</button>';
+}
+function renderCadastro(){ var C=A.c,c=porId[C.id],u=C.u;
+  $('cadForm').innerHTML='<dl class="plano" style="margin-top:12px"><div><dt>Indicador no Plano</dt><dd>'+esc(c.ind)+'</dd></div><div><dt>Prazo no Plano</dt><dd>'+esc(c.pz)+'</dd></div><div><dt>Dotação no Plano</dt><dd>'+esc(c.dot||'Não informada')+'</dd></div><div><dt>Último envio da unidade</dt><dd>'+(u?esc(u.periodo+': meta '+(numStr(u.meta_num)||'não informada')+' para '+(u.data_limite||'ano não informado')):'Nenhum envio')+'</dd></div></dl>'+
+   '<div class="tap"><h4>Meta do ano</h4><div class="g3">'+campo('cadMetaAno','Meta '+C.ano+' (valor numérico)','inputmode="decimal" placeholder="Ex.: 100" data-num="1" data-k="meta_ano"',C.meta_ano,'','Depois de salva, fica travada para a unidade.')+campo('cadMeta2034','Meta 2034 (opcional)','inputmode="decimal" placeholder="Ex.: 1000" data-num="1" data-k="meta_2034"',C.meta_2034)+'</div></div><div class="orc" id="cadOrc">'+cadOrcHtml()+'</div>'+
+   '<div class="ferr" style="margin:0"><button type="button" class="btn ok" id="btnCadSalvar">Salvar Cadastro</button>'+(C.existe?'<button type="button" class="btn perigo" id="btnCadRemover">Remover cadastro e destravar</button>':'')+'</div>';
+}
+function salvarCadastro(){ var C=A.c, acoes=C.acoes.map(function(a){return {dotacao:tx(a.dotacao),fontes:a.fontes.filter(function(f){return tx(f.codigo)||tx(f.previsto);}).map(function(f){return {codigo:tx(f.codigo),previsto:parseBR(f.previsto)};})};}).filter(function(a){return a.dotacao||a.fontes.length;});
+  acoes.forEach(function(a){ if(!a.fontes.length) a.fontes=[{codigo:'',previsto:null}]; });
+  if(tx(C.meta_ano)&&!(parseBR(C.meta_ano)>0)){ msg('msgCad','erro','Informe uma meta do ano maior que zero.'); return; }
+  msg('msgCad','info','Salvando…');
+  adm('cadastro_salvar',{id_meta:C.id,orgao:porId[C.id].o,ano:C.ano,meta_ano:parseBR(C.meta_ano),meta_2034:parseBR(C.meta_2034),sem_dispendio:C.sem,acoes:C.sem?[]:acoes}).then(function(){ C.existe=true; S.painelOk=false; renderCadastro(); msg('msgCad','ok','Cadastro salvo. A unidade já recebe estes dados travados.'); if(F.orgao===porId[C.id].o) trocarOrgao(F.orgao); return recarregarAdmin(); }).catch(function(e){ msg('msgCad','erro',e.message); });
+}
+function removerCadastro(){ var C=A.c; confirmar('Remover cadastro?','A unidade voltará a preencher a meta e o orçamento deste projeto.','Remover').then(function(s){ if(!s) return; adm('cadastro_remover',{id_meta:C.id,ano:C.ano}).then(function(){ C.existe=false; S.painelOk=false; renderCadastro(); msg('msgCad','ok','Cadastro removido.'); if(F.orgao===porId[C.id].o) trocarOrgao(F.orgao); return recarregarAdmin(); }).catch(function(e){ msg('msgCad','erro',e.message); }); }); }
+function montarFiltrosReg(){ var pers={}; A.dados.registros.forEach(function(r){pers[r.periodo]=1;}); var v=$('regPeriodo').value; $('regPeriodo').innerHTML=opts(Object.keys(pers).sort(function(a,b){return perInfo(b).ord-perInfo(a).ord;}),v,'Todos os períodos'); }
+function registrosFiltrados(){ var p=$('regPeriodo').value,o=$('regOrgao').value,t=$('regSit').value; return A.dados.registros.filter(function(r){ var ex=r.excluido==='Sim', te=r.teste==='Sim'; return (!p||r.periodo===p)&&(!o||r.orgao===o)&&(t==='todos'||(t==='ativos'&&!ex)||(t==='excluidos'&&ex)||(t==='testes'&&te)); }); }
+function renderRegistros(){ var X=registrosFiltrados(), nt=A.dados.registros.filter(function(r){return r.teste==='Sim'&&r.excluido!=='Sim';}).length; $('btnExcluirTestes').textContent='Excluir todos os testes ('+nt+')'; $('btnExcluirTestes').disabled=!nt;
+  $('tabRegistros').innerHTML=X.length?'<table class="dados"><thead><tr><th>Período</th><th>Órgão</th><th>Registro</th><th>Descrição</th><th class="num">Execução</th><th>Situação</th><th></th></tr></thead><tbody>'+X.slice(0,200).map(function(r,i){ var ex=r.excluido==='Sim'; return '<tr><td>'+esc(r.periodo)+'</td><td>'+esc(r.orgao)+'</td><td>'+esc(r.ref)+'</td><td style="min-width:240px"><span class="clamp">'+esc(r.descricao)+'</span></td><td class="num">'+fmtP(r.pct===''?null:Number(r.pct))+'</td><td>'+(ex?'<span class="tag">Excluído</span>':'<span class="tag feito">Ativo</span>')+(r.teste==='Sim'?' <span class="tag">Teste</span>':'')+'</td><td><button type="button" class="linkb" data-reg="'+i+'">'+(ex?'Restaurar':'Excluir')+'</button></td></tr>'; }).join('')+'</tbody></table>'+(X.length>200?'<p class="ajuda">Mostrando 200 de '+X.length+'. Use os filtros para refinar.</p>':''):'<div class="vazio">Nenhum registro encontrado.</div>';
+}
+function alterarExclusao(itens,excluir,titulo,texto){ confirmar(titulo,texto,excluir?'Excluir':'Restaurar').then(function(s){ if(!s) return; adm('exclusao',{itens:itens.map(function(r){return {tipo:r.tipo,chave:r.chave};}),excluir:excluir,motivo:$('regMotivo').value}).then(function(r){ S.painelOk=false; S.org={}; toast(r.alterados+' registro(s) atualizado(s).'); if(F.orgao) trocarOrgao(F.orgao); return recarregarAdmin(); }).catch(function(e){ msg('msgReg','erro',e.message); }); }); }
+function ligarAdmin(){
+  $('formLogin').addEventListener('submit',function(e){ e.preventDefault(); msg('msgLogin'); var s=$('senhaAdmin').value; api('apiAdmin',s,'entrar','').then(function(){ senhaAdm=s; $('senhaAdmin').value=''; $('adminLogin').hidden=true; $('adminArea').hidden=false; $('btnTeste').hidden=false; preencherParam(); $('cadOrgao').innerHTML=opts(ORGAOS,'','Selecione o órgão...'); $('regOrgao').innerHTML=opts(ORGAOS,'','Todos os órgãos'); $('cadAno').innerHTML=opts(anosMeta(String(anoReferencia())),String(anoReferencia())); $('verAtual').textContent='Página v'+VERSAO+' · Script v'+(S.versaoScript||'não identificado'); $('verLista').innerHTML=HISTORICO.map(function(h){return '<tr><td><strong>v'+h[0]+'</strong></td><td>'+h[1]+'</td><td>'+esc(h[2])+'</td></tr>';}).join(''); return recarregarAdmin(); }).catch(function(er){ msg('msgLogin','erro',er.message); }); });
+  document.querySelectorAll('.subaba').forEach(function(b){ b.addEventListener('click',function(){ abrirSub(b.dataset.sub); if(b.dataset.sub==='reg') recarregarAdmin().catch(function(e){ msg('msgReg','erro',e.message); }); }); });
+  $('formParam').addEventListener('submit',function(e){ e.preventDefault(); msg('msgParam','info','Salvando…'); adm('parametros',{periodo_referencia:$('inputPeriodo').value.trim(),oficio_base:$('inputOficio').value.trim(),destinatario_nome:$('inputDestNome').value.trim(),destinatario_cargo:$('inputDestCargo').value.trim(),destinatario_genero:$('inputDestGenero').value}).then(function(){ S.painelOk=false; S.org={}; FP.periodo=''; return inicio(); }).then(function(){ msg('msgParam','ok','Parâmetros publicados.'); if(F.orgao) trocarOrgao(F.orgao); }).catch(function(er){ msg('msgParam','erro',er.message); }); });
+  $('cadOrgao').addEventListener('change',function(){ $('cadMeta').value=''; opcoesCadMeta(); abrirCadastro(); });
+  $('cadAno').addEventListener('change',function(){ opcoesCadMeta(); abrirCadastro(); }); $('cadMeta').addEventListener('change',abrirCadastro);
+  $('cadForm').addEventListener('input',function(e){ var t=e.target,d=t.dataset; if(!d.k||!A.c) return; if(d.num){ var v=t.value.replace(/[^0-9.,%]/g,''); if(v!==t.value) t.value=v; } if(d.f!==undefined) A.c.acoes[+d.a].fontes[+d.f][d.k]=t.value; else if(d.a!==undefined) A.c.acoes[+d.a][d.k]=t.value; else A.c[d.k]=t.value; });
+  $('cadForm').addEventListener('click',function(e){ if(e.target.id==='btnCadSalvar'){ salvarCadastro(); return; } if(e.target.id==='btnCadRemover'){ removerCadastro(); return; } var b=e.target.closest('[data-cop]'); if(!b) return; var d=b.dataset,C=A.c;
+    if(d.cop==='sem') C.sem=!C.sem; if(d.cop==='addA') C.acoes.push({dotacao:'',fontes:[{codigo:'',previsto:''}]}); if(d.cop==='rmA') C.acoes.splice(+d.a,1); if(d.cop==='addF') C.acoes[+d.a].fontes.push({codigo:'',previsto:''}); if(d.cop==='rmF') C.acoes[+d.a].fontes.splice(+d.f,1); $('cadOrc').innerHTML=cadOrcHtml(); });
+  ['regPeriodo','regOrgao','regSit'].forEach(function(i){ $(i).addEventListener('change',renderRegistros); });
+  $('tabRegistros').addEventListener('click',function(e){ var b=e.target.closest('[data-reg]'); if(!b) return; var r=registrosFiltrados()[+b.dataset.reg], ex=r.excluido==='Sim'; alterarExclusao([r],!ex,ex?'Restaurar registro?':'Excluir registro?',ex?'O registro volta a aparecer no painel e no formulário.':'O registro sai do painel e do formulário, mas continua guardado na planilha.'); });
+  $('btnExcluirTestes').addEventListener('click',function(){ var t=A.dados.registros.filter(function(r){return r.teste==='Sim'&&r.excluido!=='Sim';}); alterarExclusao(t,true,'Excluir todos os testes?',t.length+' registro(s) de teste sairão do painel e continuarão guardados na planilha.'); });
+}
+
+// ---------- eventos ----------
+function irPara(v){ document.querySelectorAll('.aba').forEach(function(b){ b.setAttribute('aria-selected',String(b.dataset.vista===v)); }); ['painel','preencher','admin'].forEach(function(n){ $('v-'+n).hidden=n!==v; }); window.scrollTo(0,0); if(v==='painel') carregarPainel(); if(v==='admin'&&senhaAdm) recarregarAdmin().catch(function(e){ msg('msgGeral','erro',e.message); }); }
+function aplicarFiltro(k,v){ FP[k]=FP[k]===v?'':v; FP.limite=12; FP.aberta=''; montarFiltros(); renderPainel(); }
+function ligar(){
+  document.querySelectorAll('.aba').forEach(function(b){ b.addEventListener('click',function(){ irPara(b.dataset.vista); }); });
+  [['fPeriodo','periodo'],['fOrgao','orgao'],['fInciso','inciso'],['fEixo','eixo']].forEach(function(p){ $(p[0]).addEventListener('change',function(){ FP[p[1]]=this.value; FP.limite=12; FP.aberta=''; renderPainel(); }); });
+  $('btnLimparFiltros').addEventListener('click',function(){ FP.orgao=FP.inciso=FP.eixo=FP.sit=FP.busca=''; $('busca').value=''; FP.limite=12; montarFiltros(); renderPainel(); });
+  $('busca').addEventListener('input',function(){ FP.busca=this.value; FP.limite=12; renderTabela(linhasPainel(FP.periodo)); });
+  $('btnCsvPainel').addEventListener('click',csvPainel);
+  $('btnAtualizar').addEventListener('click',function(){ carregarPainel(true); });
+  $('v-painel').addEventListener('click',function(e){ var b=e.target.closest('button'); if(!b) return; var d=b.dataset;
+    if(d.sit) aplicarFiltro('sit',d.sit); else if(d.inc) aplicarFiltro('inciso',d.inc); else if(d.org) aplicarFiltro('orgao',d.org); else if(d.eixo) aplicarFiltro('eixo',d.eixo);
+    else if(d.abrir){ FP.aberta=FP.aberta===d.abrir?'':d.abrir; renderTabela(linhasPainel(FP.periodo)); } else if(b.id==='btnMais'){ FP.limite+=12; renderTabela(linhasPainel(FP.periodo)); } });
+  document.addEventListener('mousemove',function(e){ var t=e.target.closest&&e.target.closest('[data-dica]'), d=$('dica'); if(!t){ d.hidden=true; return; } d.textContent=t.dataset.dica; d.hidden=false; d.style.left=Math.min(innerWidth-290,e.clientX+12)+'px'; d.style.top=(e.clientY+14)+'px'; });
+  $('orgao').innerHTML=opts(ORGAOS,'','Selecione a Unidade...');
+  $('orgao').addEventListener('change',function(){ trocarOrgao(this.value); });
+  ['responsavel','email'].forEach(function(k){ $(k).addEventListener('input',function(){ F[k]=this.value; this.classList.remove('invalido'); gravarRasc(); }); });
+  $('formMetas').addEventListener('input',aoDigitar); $('formMetas').addEventListener('change',aoDigitar); $('formMetas').addEventListener('click',aoClicarForm);
+  $('btnTeste').addEventListener('click',preencherTeste); $('btnLimpar').addEventListener('click',limpar); $('btnResumo').addEventListener('click',gerarResumo); $('btnCsv').addEventListener('click',csvForm); $('btnEnviar').addEventListener('click',enviar); $('btnCopiar').addEventListener('click',copiarOficio);
+  $('listaFontes').innerHTML=FONTES_RECURSO.map(function(f){return '<option value="'+esc(f)+'"></option>';}).join('');
+  ligarAdmin();
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+  $('versaoPag').textContent='v'+VERSAO; ligar(); renderForm();
+  inicio().catch(function(e){ msg('msgGeral','erro','Não foi possível conectar à planilha: '+e.message+' Recarregue a página ou verifique a implantação do Apps Script.'); $('periodoValor').textContent='Indisponível'; });
+});
+
+</script>
+</body>
+</html>
